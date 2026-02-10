@@ -36,6 +36,7 @@ export function initElements() {
     solveBtn: document.getElementById('solveBtn'),
     finderResult: document.getElementById('finderResult'),
     finderGrid: document.getElementById('finderGrid'),
+    directMatch: document.getElementById('directMatch'),
   }
 }
 
@@ -185,7 +186,14 @@ function checkSolveReady() {
   const known = parseLetter(els.knownLetter)
   const ready = !!(known && targetMask)
   els.solveBtn.disabled = !ready
+  // Always show direct matches when image is uploaded
+  if (targetMask) updateDirectMatch()
+  // Show AND matches when both inputs are present
   if (ready) updateFinder()
+  else {
+    clearEl(els.finderResult)
+    clearEl(els.finderGrid)
+  }
 }
 
 function loadTargetFile(file) {
@@ -238,6 +246,50 @@ function showTargetPreview(img) {
   // Hide the upload prompt, show preview
   els.dropZoneContent.style.display = 'none'
   els.targetPreview.style.display = 'flex'
+}
+
+function updateDirectMatch() {
+  clearEl(els.directMatch)
+  if (!targetMask) return
+
+  const m = getMasks()
+  const results = []
+  for (const ch of ALPHABET) {
+    results.push({ ch, score: matchScore(m[ch], targetMask) })
+  }
+  results.sort((a, b) => b.score - a.score)
+
+  const container = document.createElement('div')
+  container.className = 'direct-match-box'
+
+  const label = document.createElement('div')
+  label.className = 'direct-match-label'
+  label.textContent = 'Image looks like'
+
+  const topMatches = document.createElement('div')
+  topMatches.className = 'direct-match-results'
+
+  for (let i = 0; i < Math.min(results.length, 5); i++) {
+    const r = results[i]
+    const item = document.createElement('div')
+    item.className = 'direct-match-item' + (i === 0 ? ' best' : '')
+
+    const letter = document.createElement('span')
+    letter.className = 'direct-match-letter'
+    letter.textContent = r.ch
+
+    const score = document.createElement('span')
+    score.className = 'direct-match-score'
+    score.textContent = `${(r.score * 100).toFixed(0)}%`
+
+    item.appendChild(letter)
+    item.appendChild(score)
+    topMatches.appendChild(item)
+  }
+
+  container.appendChild(label)
+  container.appendChild(topMatches)
+  els.directMatch.appendChild(container)
 }
 
 export function updateFinder() {
