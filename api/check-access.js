@@ -3,7 +3,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { email, password } = req.body || {}
+  // Parse body if it's a string
+  let body = req.body
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body) } catch { body = {} }
+  }
+  if (!body) body = {}
+
+  const { email, password } = body
   if (!email) {
     return res.status(400).json({ error: 'Email is required' })
   }
@@ -17,7 +24,6 @@ export default async function handler(req, res) {
     const Stripe = (await import('stripe')).default
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
-    // Search for completed checkout sessions by this email
     const sessions = await stripe.checkout.sessions.list({
       customer_details: { email },
       status: 'complete',
@@ -28,7 +34,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ access: true })
     }
 
-    // Fallback: search customers then check payment intents
     const customers = await stripe.customers.list({ email, limit: 1 })
     if (customers.data.length > 0) {
       const payments = await stripe.paymentIntents.list({
