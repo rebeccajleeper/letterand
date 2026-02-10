@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LetterAND — Combine Letter Shapes</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F50D;</text></svg>">
+</head>
+<body>
+  <div class="app">
+
+    <!-- Header -->
+    <header class="app-header">
+      <h1>LetterAND</h1>
+      <p class="subtitle">See what two overlapping letters look like</p>
+    </header>
+
+    <!-- How it works -->
+    <section class="explainer">
+      <h2>How it works</h2>
+      <div class="explainer-content">
+        <div class="step">
+          <span class="step-num">1</span>
+          <p>Imagine printing two letters on top of each other. Only the parts where <em>both</em> letters have ink will show through.</p>
+        </div>
+        <div class="step">
+          <span class="step-num">2</span>
+          <p>The combined shape often looks like a completely different letter. For example, <strong>O</strong> and <strong>B</strong> together look like <strong>O</strong>, because the round part of B fits inside O.</p>
+        </div>
+        <div class="step">
+          <span class="step-num">3</span>
+          <p>You can also upload an image and let the tool figure out which letter combination produced it.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- SECTION 1: Letter Combiner                     -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <section class="combiner-section">
+      <h2>Combine two letters</h2>
+      <p class="section-desc">Pick any two letters and see what shape they make together.</p>
+
+      <div class="combiner-inputs">
+        <div class="letter-input-group">
+          <label for="letterA">Letter A</label>
+          <input type="text" id="letterA" maxlength="1" value="O" class="letter-input input-a" spellcheck="false" autocomplete="off">
+        </div>
+        <span class="combiner-op">&amp;</span>
+        <div class="letter-input-group">
+          <label for="letterB">Letter B</label>
+          <input type="text" id="letterB" maxlength="1" value="B" class="letter-input input-b" spellcheck="false" autocomplete="off">
+        </div>
+      </div>
+
+      <!-- Visual breakdown -->
+      <div class="combiner-result" id="combinerResult">
+        <!-- Filled by JS: letter A canvas, letter B canvas, = AND canvas, => best match -->
+      </div>
+
+      <div class="combiner-summary" id="combinerSummary">
+        <!-- Filled by JS: text explanation of the result -->
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- SECTION 2: Letter Finder                       -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <section class="finder-section">
+      <h2>Find the matching letter</h2>
+      <p class="section-desc">Have an image and know one of the letters? Upload it and we'll try every letter for the other position to find the best match.</p>
+
+      <div class="finder-controls">
+        <div class="finder-row">
+          <div class="letter-input-group">
+            <label for="knownLetter">Known letter</label>
+            <input type="text" id="knownLetter" maxlength="1" value="O" class="letter-input input-known" spellcheck="false" autocomplete="off">
+          </div>
+          <div class="position-toggle">
+            <label>Position</label>
+            <div class="toggle-btns">
+              <button class="toggle-btn active" id="posA" data-pos="a">A (first)</button>
+              <button class="toggle-btn" id="posB" data-pos="b">B (second)</button>
+            </div>
+          </div>
+        </div>
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-zone-content">
+            <div class="drop-icon">+</div>
+            <p>Drag & drop an image here</p>
+            <p class="drop-or">or</p>
+            <label class="browse-btn" for="targetUpload">Browse files</label>
+            <input type="file" id="targetUpload" accept="image/*" class="sr-only">
+          </div>
+        </div>
+        <div class="target-preview" id="targetPreview">
+          <!-- Shows uploaded target thumbnail -->
+        </div>
+      </div>
+
+      <div class="finder-grid" id="finderGrid">
+        <!-- Filled by JS: 26 cards, one per letter -->
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════ -->
+    <!-- SECTION 3: Word Mode (paid)                    -->
+    <!-- ═══════════════════════════════════════════════ -->
+    <section class="word-section" id="wordSection">
+      <div class="word-header">
+        <h2>Word Mode</h2>
+        <span class="lock-icon" id="lockIcon">&#x1F512;</span>
+      </div>
+      <p class="section-desc">Enter two words of equal length and see what each letter position looks like combined.</p>
+
+      <!-- Paywall overlay (shown when locked) -->
+      <div class="paywall-overlay" id="paywallOverlay">
+        <div class="paywall-content">
+          <div class="paywall-icon">&#x1F512;</div>
+          <h3>Unlock Word Mode</h3>
+          <p>Combine entire words at once — see every letter position decoded side by side.</p>
+          <div class="paywall-price">$4.99 <span>one-time</span></div>
+
+          <div class="paywall-email-group" id="paywallEmailGroup">
+            <input type="email" id="paywallEmail" placeholder="your@email.com" class="paywall-email-input" autocomplete="email">
+            <button class="paywall-buy-btn" id="paywallBuyBtn">Unlock Word Mode</button>
+          </div>
+
+          <div class="paywall-alt">
+            <button class="paywall-signin-btn" id="paywallSigninBtn">Already purchased? Sign in with your email</button>
+          </div>
+
+          <div class="paywall-status" id="paywallStatus"></div>
+        </div>
+      </div>
+
+      <!-- Unlocked indicator -->
+      <div class="word-unlocked" id="wordUnlocked" style="display: none;">
+        <span>Signed in as <strong id="wordEmail"></strong></span>
+        <button class="word-logout-btn" id="wordLogoutBtn">Sign out</button>
+      </div>
+
+      <!-- Word inputs (disabled when locked) -->
+      <div class="word-inputs" id="wordInputs">
+        <div class="word-input-group">
+          <label for="wordA">Word A</label>
+          <input type="text" id="wordA" placeholder="HELLO" class="word-input input-a" spellcheck="false" autocomplete="off" disabled>
+        </div>
+        <span class="combiner-op">&amp;</span>
+        <div class="word-input-group">
+          <label for="wordB">Word B</label>
+          <input type="text" id="wordB" placeholder="WORLD" class="word-input input-b" spellcheck="false" autocomplete="off" disabled>
+        </div>
+      </div>
+
+      <div class="word-error" id="wordError"></div>
+
+      <div class="word-result" id="wordResult">
+        <!-- Filled by JS: one card per letter position -->
+      </div>
+
+      <div class="word-decoded" id="wordDecoded">
+        <!-- Filled by JS: the decoded result word -->
+      </div>
+    </section>
+
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
