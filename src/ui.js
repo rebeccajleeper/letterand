@@ -181,19 +181,18 @@ export function setupFinder() {
     if (file && file.type.startsWith('image/')) loadTargetFile(file)
   })
 
-  // Auto-solve on input change
-  els.knownLetter.addEventListener('input', autoSolveFinder)
+  // Show the 26-card grid when known letter changes (no target matching)
+  // Clear direct match and grid when letter is cleared
+  els.knownLetter.addEventListener('input', () => {
+    clearEl(els.directMatch)
+    updateFinder(false)
+  })
 
-  // Solve button also triggers
-  els.solveBtn.addEventListener('click', updateFinder)
-}
-
-function autoSolveFinder() {
-  // Always show direct matches when image is uploaded
-  if (targetMask) updateDirectMatch()
-  else clearEl(els.directMatch)
-  // Always show the full grid when known letter is present
-  updateFinder()
+  // Solve button runs target matching + direct match
+  els.solveBtn.addEventListener('click', () => {
+    if (targetMask) updateDirectMatch()
+    updateFinder(true)
+  })
 }
 
 function loadTargetFile(file) {
@@ -205,7 +204,7 @@ function loadTargetFile(file) {
       targetMask = imageToMask(img)
       showTargetPreview(img)
       els.dropZone.classList.add('has-file')
-      autoSolveFinder()
+      els.solveBtn.disabled = false
     }
     img.src = ev.target.result
   }
@@ -298,7 +297,7 @@ function updateDirectMatch() {
   els.directMatch.appendChild(container)
 }
 
-export function updateFinder() {
+export function updateFinder(solve = false) {
   clearEl(els.finderResult)
   clearEl(els.finderGrid)
 
@@ -311,18 +310,20 @@ export function updateFinder() {
     return
   }
 
+  // Only use target matching when Solve was clicked
+  const useTarget = solve && targetMask
+
   // Build all 26 AND combinations across all fonts (keep best per candidate)
   const fontSets = getAllFontMasks()
   const results = []
 
   for (const ch of ALPHABET) {
-    // Find best AND mask across all fonts for this candidate
     let bestMaskAND = null
     let bestTargetScore = null
 
     for (const { masks: m } of fontSets) {
       const maskAND = andMasks(m[known], m[ch])
-      if (targetMask) {
+      if (useTarget) {
         const score = matchScore(maskAND, targetMask)
         if (bestTargetScore === null || score > bestTargetScore) {
           bestTargetScore = score
@@ -356,8 +357,8 @@ export function updateFinder() {
     })
   }
 
-  // Sort by target score (best first) if target uploaded, otherwise alphabetical
-  if (targetMask) {
+  // Sort by target score only when solving
+  if (useTarget) {
     results.sort((a, b) => b.targetScore - a.targetScore)
   }
 
@@ -365,7 +366,7 @@ export function updateFinder() {
   for (const r of results) {
     const card = document.createElement('div')
     card.className = 'finder-card'
-    if (r.targetScore !== null && r.targetScore > 0.7) {
+    if (useTarget && r.targetScore > 0.7) {
       card.classList.add('high-match')
     }
 
@@ -384,8 +385,8 @@ export function updateFinder() {
     looks.innerHTML = `looks like <strong>${r.looksLike.ch}</strong>`
     card.appendChild(looks)
 
-    // Target match score (if uploaded)
-    if (r.targetScore !== null) {
+    // Target match score (only when solving)
+    if (useTarget) {
       const score = document.createElement('div')
       score.className = 'card-score'
       score.textContent = `${(r.targetScore * 100).toFixed(0)}% match`
