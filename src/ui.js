@@ -2,7 +2,7 @@
 
 import {
   CELL, ALPHABET, buildLetterMasks, andMasks,
-  drawMask, findBestMatches, matchScore, toBinary,
+  drawMask, findBestMatches, matchScore,
 } from './engine.js'
 
 // Default font size (maps to 300px on the 200x200 canvas)
@@ -210,7 +210,14 @@ function imageToMask(img) {
   ctx.fillStyle = '#fff'
   ctx.fillRect(0, 0, CELL, CELL)
   ctx.drawImage(img, 0, 0, CELL, CELL)
-  return toBinary(ctx.getImageData(0, 0, CELL, CELL))
+  const d = ctx.getImageData(0, 0, CELL, CELL).data
+  const mask = new Uint8Array(CELL * CELL)
+  for (let i = 0; i < mask.length; i++) {
+    // Color-agnostic: any pixel with a dark channel is "ink"
+    const minCh = Math.min(d[i * 4], d[i * 4 + 1], d[i * 4 + 2])
+    mask[i] = minCh < 200 ? 1 : 0
+  }
+  return mask
 }
 
 function showTargetPreview(img) {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LetterAND — Combine Letter Shapes</title>
+  <title>PuzzleDecode — Decode Letter Overlap Puzzles</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F50D;</text></svg>">
 </head>
 <body>
@@ -11,8 +11,8 @@
 
     <!-- Header -->
     <header class="app-header">
-      <h1>LetterAND</h1>
-      <p class="subtitle">See what two overlapping letters look like</p>
+      <h1>PuzzleDecode</h1>
+      <p class="subtitle">Decode the letter overlap puzzle</p>
     </header>
 
     <!-- How it works -->
@@ -108,7 +108,7 @@
         <h2>Word Mode</h2>
         <span class="lock-icon" id="lockIcon">&#x1F512;</span>
       </div>
-      <p class="section-desc">Enter two words of equal length and see what each letter position looks like combined.</p>
+      <p class="section-desc">Combine words or decode a combined word image to find the missing letters.</p>
 
       <!-- Paywall overlay (shown when locked) -->
       <div class="paywall-overlay" id="paywallOverlay">
@@ -138,27 +138,53 @@
         <button class="word-logout-btn" id="wordLogoutBtn">Sign out</button>
       </div>
 
-      <!-- Word inputs (disabled when locked) -->
-      <div class="word-inputs" id="wordInputs">
-        <div class="word-input-group">
-          <label for="wordA">Word A</label>
-          <input type="text" id="wordA" placeholder="HELLO" class="word-input input-a" spellcheck="false" autocomplete="off" disabled>
-        </div>
-        <span class="combiner-op">&amp;</span>
-        <div class="word-input-group">
-          <label for="wordB">Word B</label>
-          <input type="text" id="wordB" placeholder="WORLD" class="word-input input-b" spellcheck="false" autocomplete="off" disabled>
-        </div>
+      <!-- Tabs -->
+      <div class="word-tabs" id="wordTabs">
+        <button class="word-tab active" data-tab="combine" id="tabCombine">Combine</button>
+        <button class="word-tab" data-tab="decode" id="tabDecode">Decode Image</button>
       </div>
 
-      <div class="word-error" id="wordError"></div>
-
-      <div class="word-result" id="wordResult">
-        <!-- Filled by JS: one card per letter position -->
+      <!-- ── Combine panel (existing) ── -->
+      <div class="word-panel" id="combinePanel">
+        <div class="word-inputs" id="wordInputs">
+          <div class="word-input-group">
+            <label for="wordA">Word A</label>
+            <input type="text" id="wordA" placeholder="HELLO" class="word-input input-a" spellcheck="false" autocomplete="off" disabled>
+          </div>
+          <span class="combiner-op">&amp;</span>
+          <div class="word-input-group">
+            <label for="wordB">Word B</label>
+            <input type="text" id="wordB" placeholder="WORLD" class="word-input input-b" spellcheck="false" autocomplete="off" disabled>
+          </div>
+        </div>
+        <div class="word-error" id="wordError"></div>
+        <div class="word-result" id="wordResult"></div>
+        <div class="word-decoded" id="wordDecoded"></div>
       </div>
 
-      <div class="word-decoded" id="wordDecoded">
-        <!-- Filled by JS: the decoded result word -->
+      <!-- ── Decode panel (new) ── -->
+      <div class="word-panel" id="decodePanel" style="display: none;">
+        <p class="panel-desc">Upload an image of the combined word and enter the word you know. We'll decode the missing word letter by letter.</p>
+        <div class="decode-controls">
+          <div class="decode-row">
+            <div class="word-input-group">
+              <label for="decodeWord">Known word</label>
+              <input type="text" id="decodeWord" placeholder="HELLO" class="word-input input-a" spellcheck="false" autocomplete="off" disabled>
+            </div>
+            <span class="combiner-op">&amp;</span>
+            <div class="decode-drop-zone" id="decodeDropZone">
+              <div class="decode-drop-content" id="decodeDropContent">
+                <div class="drop-icon">+</div>
+                <p>Upload combined word image</p>
+                <input type="file" id="decodeUpload" accept="image/*" class="sr-only">
+              </div>
+              <div class="decode-preview" id="decodePreview"></div>
+            </div>
+          </div>
+          <button class="solve-btn" id="decodeSolveBtn" disabled>Decode Word</button>
+        </div>
+        <div class="decode-result" id="decodeResult"></div>
+        <div class="decode-decoded-result" id="decodeDecodedResult"></div>
       </div>
     </section>
 

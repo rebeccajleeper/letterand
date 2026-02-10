@@ -3,7 +3,7 @@
 import './style.css'
 import { initElements, updateCombiner, setupFinder, updateFinder } from './ui.js'
 import { isUnlocked, getEmail, unlock, checkEmail, startCheckout, logout } from './auth.js'
-import { initWordMode, updateWordMode } from './word-mode.js'
+import { initWordMode, updateWordMode, setDecodeEnabled } from './word-mode.js'
 
 document.addEventListener('DOMContentLoaded', async () => {
   initElements()
@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     lockIcon.innerHTML = '&#x1F513;'
     wordA.disabled = false
     wordB.disabled = false
+    setDecodeEnabled(true)
     const email = getEmail()
     if (email) wordEmailEl.textContent = email
   }
@@ -50,6 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     lockIcon.innerHTML = '&#x1F512;'
     wordA.disabled = true
     wordB.disabled = true
+    setDecodeEnabled(false)
   }
 
   function setStatus(msg, isError) {

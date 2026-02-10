@@ -1,4 +1,4 @@
-/* ── LetterAND — Combine Letter Shapes ────────────────── */
+/* ── PuzzleDecode — Decode Letter Overlap Puzzles ─────── */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
@@ -639,6 +639,193 @@ section h2 {
 .lock-icon {
   font-size: 1rem;
   opacity: 0.6;
+}
+
+/* ── Word tabs ────────────────────────────────────── */
+
+.word-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+}
+
+.word-tab {
+  flex: 1;
+  padding: 10px 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.word-tab:hover {
+  color: var(--text-muted);
+}
+
+.word-tab.active {
+  background: var(--bg-input);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.panel-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+/* ── Decode panel ────────────────────────────────── */
+
+.decode-controls {
+  margin-bottom: 20px;
+}
+
+.decode-row {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.decode-drop-zone {
+  min-width: 200px;
+  height: 80px;
+  border: 2px dashed var(--border-glow);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: all 0.25s;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.1);
+  position: relative;
+  padding: 8px 16px;
+}
+
+.decode-drop-zone:hover {
+  border-color: var(--accent-blue);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.decode-drop-zone.drag-over {
+  border-color: var(--accent-green);
+  background: rgba(61, 219, 160, 0.08);
+  border-style: solid;
+}
+
+.decode-drop-zone.has-file {
+  border-color: var(--accent-green);
+  border-style: solid;
+}
+
+.decode-drop-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.decode-drop-content .drop-icon {
+  font-size: 1.2rem;
+  color: var(--text-dim);
+  opacity: 0.5;
+}
+
+.decode-drop-content p {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.decode-preview {
+  display: none;
+}
+
+.decode-preview img,
+.decode-preview canvas {
+  max-height: 60px;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Decode result ───────────────────────────────── */
+
+.decode-result {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.decode-result:empty {
+  display: none;
+}
+
+.decode-card {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 80px;
+  transition: all 0.2s;
+}
+
+.decode-card canvas {
+  border-radius: var(--radius-sm);
+  background: #fff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+}
+
+.decode-card-pos {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.5;
+}
+
+.decode-card-letter {
+  font-family: 'Arial Black', 'Arial Bold', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--accent-green);
+}
+
+.decode-card-score {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.decode-card-pair {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.decode-decoded-result {
+  text-align: center;
+  min-height: 0;
+}
+
+.decode-decoded-result:empty {
+  display: none;
 }
 
 /* ── Word inputs ──────────────────────────────────── */
