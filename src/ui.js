@@ -1,18 +1,24 @@
 // UI logic for combiner + finder modes
 
 import {
-  CELL, ALPHABET, buildLetterMasks, andMasks,
+  CELL, ALPHABET, buildLetterMasks, buildAllFontMasks, andMasks,
   drawMask, findBestMatches, matchScore,
 } from './engine.js'
 
 const FONT_SIZE = 160
 
-// Cached letter masks
+// Cached letter masks — single font for display, all fonts for solving
 let masks = null
+let allFontMasks = null
 
 function getMasks() {
   if (!masks) masks = buildLetterMasks(FONT_SIZE)
   return masks
+}
+
+function getAllFontMasks() {
+  if (!allFontMasks) allFontMasks = buildAllFontMasks(FONT_SIZE)
+  return allFontMasks
 }
 
 // ── DOM refs ───────────────────────────────────────────
@@ -263,8 +269,17 @@ function updateDirectMatch() {
   clearEl(els.directMatch)
   if (!targetMask) return
 
-  const m = getMasks()
-  const results = [...ALPHABET].map(ch => ({ ch, score: matchScore(m[ch], targetMask) }))
+  // Try all fonts and keep best score per letter
+  const bestByLetter = {}
+  for (const { masks: m } of getAllFontMasks()) {
+    for (const ch of ALPHABET) {
+      const score = matchScore(m[ch], targetMask)
+      if (!bestByLetter[ch] || score > bestByLetter[ch]) {
+        bestByLetter[ch] = score
+      }
+    }
+  }
+  const results = Object.entries(bestByLetter).map(([ch, score]) => ({ ch, score }))
   results.sort((a, b) => b.score - a.score)
 
   const container = document.createElement('div')
@@ -320,9 +335,21 @@ export function updateFinder(solve = false) {
   const results = []
 
   for (const ch of ALPHABET) {
+    // Always use default font for display
     const maskAND = andMasks(m[known], m[ch])
     const looksLike = findBestMatches(maskAND, m, 1)[0]
-    const targetScore = useTarget ? matchScore(maskAND, targetMask) : null
+
+    // Score across all fonts when solving (picks best font per candidate)
+    let targetScore = null
+    if (useTarget) {
+      for (const { masks: fm } of getAllFontMasks()) {
+        const andResult = andMasks(fm[known], fm[ch])
+        const score = matchScore(andResult, targetMask)
+        if (targetScore === null || score > targetScore) {
+          targetScore = score
+        }
+      }
+    }
 
     results.push({ ch, maskAND, looksLike, targetScore })
   }
