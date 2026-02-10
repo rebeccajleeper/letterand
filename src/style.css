@@ -649,6 +649,16 @@ section h2 {
 .card-header .hl-a { color: var(--accent-red); }
 .card-header .hl-b { color: var(--accent-blue); }
 
+.card-looks {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.card-looks strong {
+  color: var(--accent-green);
+  font-size: 0.85rem;
+}
+
 .card-score {
   font-size: 0.65rem;
   color: var(--accent-cyan);

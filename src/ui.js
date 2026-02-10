@@ -181,25 +181,19 @@ export function setupFinder() {
     if (file && file.type.startsWith('image/')) loadTargetFile(file)
   })
 
-  // Enable/disable solve button based on inputs
-  els.knownLetter.addEventListener('input', checkSolveReady)
+  // Auto-solve on input change
+  els.knownLetter.addEventListener('input', autoSolveFinder)
 
-  // Solve button
+  // Solve button also triggers
   els.solveBtn.addEventListener('click', updateFinder)
 }
 
-function checkSolveReady() {
-  const known = parseLetter(els.knownLetter)
-  const ready = !!(known && targetMask)
-  els.solveBtn.disabled = !ready
+function autoSolveFinder() {
   // Always show direct matches when image is uploaded
   if (targetMask) updateDirectMatch()
-  // Show AND matches when both inputs are present
-  if (ready) updateFinder()
-  else {
-    clearEl(els.finderResult)
-    clearEl(els.finderGrid)
-  }
+  else clearEl(els.directMatch)
+  // Always show the full grid when known letter is present
+  updateFinder()
 }
 
 function loadTargetFile(file) {
@@ -211,7 +205,7 @@ function loadTargetFile(file) {
       targetMask = imageToMask(img)
       showTargetPreview(img)
       els.dropZone.classList.add('has-file')
-      checkSolveReady()
+      autoSolveFinder()
     }
     img.src = ev.target.result
   }
@@ -309,78 +303,104 @@ export function updateFinder() {
   clearEl(els.finderGrid)
 
   const known = parseLetter(els.knownLetter)
-  if (!known || !targetMask) return
+  if (!known) {
+    const msg = document.createElement('p')
+    msg.className = 'finder-empty'
+    msg.textContent = 'Enter a known letter above to see all 26 AND combinations.'
+    els.finderGrid.appendChild(msg)
+    return
+  }
 
-  // Try all fonts and keep best score per candidate letter
-  const bestByLetter = {}
-  for (const { masks: m } of getAllFontMasks()) {
-    for (const ch of ALPHABET) {
+  // Build all 26 AND combinations across all fonts (keep best per candidate)
+  const fontSets = getAllFontMasks()
+  const results = []
+
+  for (const ch of ALPHABET) {
+    // Find best AND mask across all fonts for this candidate
+    let bestMaskAND = null
+    let bestTargetScore = null
+
+    for (const { masks: m } of fontSets) {
       const maskAND = andMasks(m[known], m[ch])
-      const score = matchScore(maskAND, targetMask)
-      if (!bestByLetter[ch] || score > bestByLetter[ch].score) {
-        bestByLetter[ch] = { ch, score, maskAND }
+      if (targetMask) {
+        const score = matchScore(maskAND, targetMask)
+        if (bestTargetScore === null || score > bestTargetScore) {
+          bestTargetScore = score
+          bestMaskAND = maskAND
+        }
+      } else if (!bestMaskAND) {
+        bestMaskAND = maskAND
       }
     }
+
+    // Use default font mask for display if no target
+    if (!bestMaskAND) {
+      const m = fontSets[0].masks
+      bestMaskAND = andMasks(m[known], m[ch])
+    }
+
+    // Find what this AND result looks like (across all fonts)
+    let bestLooksLike = { ch: '?', score: 0 }
+    for (const { masks: m } of fontSets) {
+      const matches = findBestMatches(bestMaskAND, m, 1)
+      if (matches[0].score > bestLooksLike.score) {
+        bestLooksLike = matches[0]
+      }
+    }
+
+    results.push({
+      ch,
+      maskAND: bestMaskAND,
+      looksLike: bestLooksLike,
+      targetScore: bestTargetScore,
+    })
   }
-  const results = Object.values(bestByLetter)
-  results.sort((a, b) => b.score - a.score)
 
-  // Show prominent best match
-  const best = results[0]
+  // Sort by target score (best first) if target uploaded, otherwise alphabetical
+  if (targetMask) {
+    results.sort((a, b) => b.targetScore - a.targetScore)
+  }
 
-  const resultCard = document.createElement('div')
-  resultCard.className = 'finder-best-match'
+  // Build card for each combination
+  for (const r of results) {
+    const card = document.createElement('div')
+    card.className = 'finder-card'
+    if (r.targetScore !== null && r.targetScore > 0.7) {
+      card.classList.add('high-match')
+    }
 
-  const resultLabel = document.createElement('div')
-  resultLabel.className = 'finder-best-label'
-  resultLabel.textContent = 'Missing letter'
+    // Header: letter pair
+    const header = document.createElement('div')
+    header.className = 'card-header'
+    header.innerHTML = `<span class="hl-a">${known}</span> & <span class="hl-b">${r.ch}</span>`
+    card.appendChild(header)
 
-  const resultLetter = document.createElement('div')
-  resultLetter.className = 'finder-best-letter'
-  resultLetter.textContent = best.ch
+    // AND result canvas
+    card.appendChild(makeCanvas(r.maskAND, 34, 34, 34, 64))
 
-  const resultCanvas = makeCanvas(best.maskAND, 34, 34, 34, 100)
+    // What it looks like
+    const looks = document.createElement('div')
+    looks.className = 'card-looks'
+    looks.innerHTML = `looks like <strong>${r.looksLike.ch}</strong>`
+    card.appendChild(looks)
 
-  const resultScore = document.createElement('div')
-  resultScore.className = 'finder-best-score'
-  resultScore.textContent = `${(best.score * 100).toFixed(0)}% match`
-
-  const resultExplain = document.createElement('div')
-  resultExplain.className = 'finder-best-explain'
-  resultExplain.innerHTML = `<span class="hl-a">${known}</span> <span class="op">&</span> <span class="hl-b">${best.ch}</span> produces this image`
-
-  resultCard.appendChild(resultLabel)
-  resultCard.appendChild(resultLetter)
-  resultCard.appendChild(resultCanvas)
-  resultCard.appendChild(resultScore)
-  resultCard.appendChild(resultExplain)
-  els.finderResult.appendChild(resultCard)
-
-  // Show top 5 runner-ups
-  if (results.length > 1) {
-    const runnersLabel = document.createElement('div')
-    runnersLabel.className = 'finder-runners-label'
-    runnersLabel.textContent = 'Other candidates'
-    els.finderGrid.appendChild(runnersLabel)
-
-    for (let i = 1; i < Math.min(results.length, 6); i++) {
-      const r = results[i]
-      const card = document.createElement('div')
-      card.className = 'finder-card'
-
-      const header = document.createElement('div')
-      header.className = 'card-header'
-      header.innerHTML = `<span class="hl-a">${known}</span> & <span class="hl-b">${r.ch}</span>`
-      card.appendChild(header)
-
-      card.appendChild(makeCanvas(r.maskAND, 34, 34, 34, 64))
-
+    // Target match score (if uploaded)
+    if (r.targetScore !== null) {
       const score = document.createElement('div')
       score.className = 'card-score'
-      score.textContent = `${(r.score * 100).toFixed(0)}%`
+      score.textContent = `${(r.targetScore * 100).toFixed(0)}% match`
       card.appendChild(score)
-
-      els.finderGrid.appendChild(card)
     }
+
+    // The candidate letter label
+    const candidateLabel = document.createElement('div')
+    candidateLabel.className = 'card-candidate'
+    candidateLabel.textContent = r.ch
+    card.appendChild(candidateLabel)
+
+    els.finderGrid.appendChild(card)
   }
+
+  // Enable/disable solve button
+  els.solveBtn.disabled = !targetMask
 }
