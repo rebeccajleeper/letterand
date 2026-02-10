@@ -26,9 +26,8 @@ export function renderLetter(ch, fontSize, fontFamily) {
   ctx.fillStyle = '#fff'
   ctx.fillRect(0, 0, CELL, CELL)
   ctx.fillStyle = '#000'
-  const scaledFont = Math.round(fontSize * (CELL / 80))
   const ff = fontFamily || '"Arial Black", "Arial Bold", sans-serif'
-  ctx.font = `bold ${scaledFont}px ${ff}`
+  ctx.font = `bold ${fontSize}px ${ff}`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.fillText(ch.toUpperCase(), CELL / 2, CELL / 2 + Math.round(CELL * 0.02))

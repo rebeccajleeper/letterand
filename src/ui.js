@@ -5,8 +5,7 @@ import {
   drawMask, findBestMatches, matchScore,
 } from './engine.js'
 
-// Default font size (maps to 300px on the 200x200 canvas)
-const FONT_SIZE = 120
+const FONT_SIZE = 160
 
 // Cached letter masks
 let masks = null
@@ -265,7 +264,7 @@ function updateDirectMatch() {
   if (!targetMask) return
 
   const m = getMasks()
-  const results = ALPHABET.map(ch => ({ ch, score: matchScore(m[ch], targetMask) }))
+  const results = [...ALPHABET].map(ch => ({ ch, score: matchScore(m[ch], targetMask) }))
   results.sort((a, b) => b.score - a.score)
 
   const container = document.createElement('div')

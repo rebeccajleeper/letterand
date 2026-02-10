@@ -5,7 +5,7 @@ import {
   drawMask, findBestMatches, matchScore,
 } from './engine.js'
 
-const FONT_SIZE = 120
+const FONT_SIZE = 160
 let masks = null
 let allFontMasks = null
 
