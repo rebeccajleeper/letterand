@@ -183,7 +183,9 @@ export function setupFinder() {
 
 function checkSolveReady() {
   const known = parseLetter(els.knownLetter)
-  els.solveBtn.disabled = !(known && targetMask)
+  const ready = !!(known && targetMask)
+  els.solveBtn.disabled = !ready
+  if (ready) updateFinder()
 }
 
 function loadTargetFile(file) {

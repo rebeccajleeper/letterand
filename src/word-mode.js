@@ -137,7 +137,9 @@ export function setDecodeEnabled(enabled) {
 
 function checkDecodeReady() {
   const word = parseLine(els.decodeWord?.value || '')
-  els.decodeSolveBtn.disabled = !(word.length > 0 && decodeImage)
+  const ready = !!(word.length > 0 && decodeImage)
+  els.decodeSolveBtn.disabled = !ready
+  if (ready) runDecode()
 }
 
 // ── Decode image loading ──────────────────────────────
