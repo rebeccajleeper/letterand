@@ -242,6 +242,25 @@ function showTargetPreview(img) {
   ctx.drawImage(img, 0, 0, sz, sz)
   els.targetPreview.appendChild(cv)
 
+  // Clear button
+  const clearBtn = document.createElement('button')
+  clearBtn.className = 'target-clear-btn'
+  clearBtn.textContent = '\u00d7'
+  clearBtn.title = 'Remove image'
+  clearBtn.addEventListener('click', (e) => {
+    e.stopPropagation()
+    targetImage = null
+    targetMask = null
+    clearEl(els.targetPreview)
+    clearEl(els.directMatch)
+    els.dropZoneContent.style.display = ''
+    els.targetPreview.style.display = 'none'
+    els.dropZone.classList.remove('has-file')
+    els.targetUpload.value = ''
+    els.solveBtn.disabled = true
+  })
+  els.targetPreview.appendChild(clearBtn)
+
   // Hide the upload prompt, show preview
   els.dropZoneContent.style.display = 'none'
   els.targetPreview.style.display = 'flex'

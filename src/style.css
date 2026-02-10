@@ -455,11 +455,35 @@ section h2 {
   display: none;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 .target-canvas {
   border-radius: var(--radius-sm);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.target-clear-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent-red);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.target-clear-btn:hover {
+  background: #ff2244;
 }
 
 /* ── Direct match (image vs letter library) ────────── */
