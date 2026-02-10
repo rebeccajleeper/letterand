@@ -3,10 +3,22 @@
 export const CELL = 200
 export const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
+// Fonts to try when matching — different puzzles use different fonts
+export const FONT_FAMILIES = [
+  '"Arial Black", "Arial Bold", sans-serif',
+  'Impact, "Arial Narrow Bold", sans-serif',
+  '"Helvetica Neue", "Helvetica Bold", Helvetica, sans-serif',
+  '"Trebuchet MS", "Lucida Grande", sans-serif',
+  'Verdana, Geneva, sans-serif',
+  'Georgia, "Times New Roman", serif',
+  '"Courier New", Courier, monospace',
+  '"Futura", "Century Gothic", sans-serif',
+]
+
 /**
  * Render a single letter to an offscreen canvas and return its ImageData.
  */
-export function renderLetter(ch, fontSize) {
+export function renderLetter(ch, fontSize, fontFamily) {
   const c = document.createElement('canvas')
   c.width = CELL
   c.height = CELL
@@ -15,7 +27,8 @@ export function renderLetter(ch, fontSize) {
   ctx.fillRect(0, 0, CELL, CELL)
   ctx.fillStyle = '#000'
   const scaledFont = Math.round(fontSize * (CELL / 80))
-  ctx.font = `${scaledFont}px "Arial Black", "Arial Bold", sans-serif`
+  const ff = fontFamily || '"Arial Black", "Arial Bold", sans-serif'
+  ctx.font = `bold ${scaledFont}px ${ff}`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.fillText(ch.toUpperCase(), CELL / 2, CELL / 2 + Math.round(CELL * 0.02))
@@ -65,14 +78,24 @@ export function matchScore(candidate, target) {
 }
 
 /**
- * Build binary masks for every letter A-Z at a given font size.
+ * Build binary masks for every letter A-Z at a given font size and font family.
  */
-export function buildLetterMasks(fontSize) {
+export function buildLetterMasks(fontSize, fontFamily) {
   const masks = {}
   for (const ch of ALPHABET) {
-    masks[ch] = toBinary(renderLetter(ch, fontSize))
+    masks[ch] = toBinary(renderLetter(ch, fontSize, fontFamily))
   }
   return masks
+}
+
+/**
+ * Build mask sets for ALL fonts. Returns an array of { fontFamily, masks }.
+ */
+export function buildAllFontMasks(fontSize) {
+  return FONT_FAMILIES.map(ff => ({
+    fontFamily: ff,
+    masks: buildLetterMasks(fontSize, ff),
+  }))
 }
 
 /**

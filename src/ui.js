@@ -1,19 +1,25 @@
 // UI logic for combiner + finder modes
 
 import {
-  CELL, ALPHABET, buildLetterMasks, andMasks,
+  CELL, ALPHABET, buildLetterMasks, buildAllFontMasks, andMasks,
   drawMask, findBestMatches, matchScore,
 } from './engine.js'
 
 // Default font size (maps to 300px on the 200x200 canvas)
 const FONT_SIZE = 120
 
-// Cached letter masks (rebuilt only when needed)
+// Cached letter masks — single font for combiner display, all fonts for finder
 let masks = null
+let allFontMasks = null
 
 function getMasks() {
   if (!masks) masks = buildLetterMasks(FONT_SIZE)
   return masks
+}
+
+function getAllFontMasks() {
+  if (!allFontMasks) allFontMasks = buildAllFontMasks(FONT_SIZE)
+  return allFontMasks
 }
 
 // ── DOM refs ───────────────────────────────────────────
@@ -252,11 +258,17 @@ function updateDirectMatch() {
   clearEl(els.directMatch)
   if (!targetMask) return
 
-  const m = getMasks()
-  const results = []
-  for (const ch of ALPHABET) {
-    results.push({ ch, score: matchScore(m[ch], targetMask) })
+  // Try all fonts and keep best score per letter
+  const bestByLetter = {}
+  for (const { masks: m } of getAllFontMasks()) {
+    for (const ch of ALPHABET) {
+      const score = matchScore(m[ch], targetMask)
+      if (!bestByLetter[ch] || score > bestByLetter[ch]) {
+        bestByLetter[ch] = score
+      }
+    }
   }
+  const results = Object.entries(bestByLetter).map(([ch, score]) => ({ ch, score }))
   results.sort((a, b) => b.score - a.score)
 
   const container = document.createElement('div')
@@ -299,15 +311,18 @@ export function updateFinder() {
   const known = parseLetter(els.knownLetter)
   if (!known || !targetMask) return
 
-  const m = getMasks()
-  const results = []
-
-  for (const ch of ALPHABET) {
-    const maskAND = andMasks(m[known], m[ch])
-    const score = matchScore(maskAND, targetMask)
-    results.push({ ch, score, maskAND })
+  // Try all fonts and keep best score per candidate letter
+  const bestByLetter = {}
+  for (const { masks: m } of getAllFontMasks()) {
+    for (const ch of ALPHABET) {
+      const maskAND = andMasks(m[known], m[ch])
+      const score = matchScore(maskAND, targetMask)
+      if (!bestByLetter[ch] || score > bestByLetter[ch].score) {
+        bestByLetter[ch] = { ch, score, maskAND }
+      }
+    }
   }
-
+  const results = Object.values(bestByLetter)
   results.sort((a, b) => b.score - a.score)
 
   // Show prominent best match

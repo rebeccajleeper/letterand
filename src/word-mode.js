@@ -1,16 +1,22 @@
 // Word Mode — paid feature: combine two full words or decode a word image
 
 import {
-  CELL, ALPHABET, buildLetterMasks, andMasks,
+  CELL, ALPHABET, buildLetterMasks, buildAllFontMasks, andMasks,
   drawMask, findBestMatches, matchScore,
 } from './engine.js'
 
 const FONT_SIZE = 120
 let masks = null
+let allFontMasks = null
 
 function getMasks() {
   if (!masks) masks = buildLetterMasks(FONT_SIZE)
   return masks
+}
+
+function getAllFontMasks() {
+  if (!allFontMasks) allFontMasks = buildAllFontMasks(FONT_SIZE)
+  return allFontMasks
 }
 
 function clearEl(el) {
@@ -211,20 +217,22 @@ function runDecode() {
 
   // Split image into letter-sized masks
   const targetMasks = splitImageToMasks(decodeImage, knownWord.length)
-  const m = getMasks()
+  const fontSets = getAllFontMasks()
   const decoded = []
 
   for (let i = 0; i < knownWord.length; i++) {
     const knownCh = knownWord[i]
     const targetMask = targetMasks[i]
 
-    // Try all 26 candidates
+    // Try all 26 candidates across all fonts
     let best = { ch: '?', score: -1, maskAND: null }
-    for (const ch of ALPHABET) {
-      const maskAND = andMasks(m[knownCh], m[ch])
-      const score = matchScore(maskAND, targetMask)
-      if (score > best.score) {
-        best = { ch, score, maskAND }
+    for (const { masks: m } of fontSets) {
+      for (const ch of ALPHABET) {
+        const maskAND = andMasks(m[knownCh], m[ch])
+        const score = matchScore(maskAND, targetMask)
+        if (score > best.score) {
+          best = { ch, score, maskAND }
+        }
       }
     }
     decoded.push(best)
