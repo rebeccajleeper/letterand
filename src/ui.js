@@ -337,32 +337,25 @@ export function updateFinder(solve = false) {
   const results = []
 
   for (const ch of ALPHABET) {
-    let bestMaskAND = null
-    let bestTargetScore = null
+    // Always use the default font for the displayed AND canvas (keeps it stable)
+    const displayMask = andMasks(fontSets[0].masks[known], fontSets[0].masks[ch])
 
-    for (const { masks: m } of fontSets) {
-      const maskAND = andMasks(m[known], m[ch])
-      if (useTarget) {
+    // Score across all fonts for target matching (only when solving)
+    let bestTargetScore = null
+    if (useTarget) {
+      for (const { masks: m } of fontSets) {
+        const maskAND = andMasks(m[known], m[ch])
         const score = matchScore(maskAND, targetMask)
         if (bestTargetScore === null || score > bestTargetScore) {
           bestTargetScore = score
-          bestMaskAND = maskAND
         }
-      } else if (!bestMaskAND) {
-        bestMaskAND = maskAND
       }
     }
 
-    // Use default font mask for display if no target
-    if (!bestMaskAND) {
-      const m = fontSets[0].masks
-      bestMaskAND = andMasks(m[known], m[ch])
-    }
-
-    // Find what this AND result looks like (across all fonts)
+    // Find what this AND result looks like (compare display mask across all font libraries)
     let bestLooksLike = { ch: '?', score: 0 }
     for (const { masks: m } of fontSets) {
-      const matches = findBestMatches(bestMaskAND, m, 1)
+      const matches = findBestMatches(displayMask, m, 1)
       if (matches[0].score > bestLooksLike.score) {
         bestLooksLike = matches[0]
       }
@@ -370,7 +363,7 @@ export function updateFinder(solve = false) {
 
     results.push({
       ch,
-      maskAND: bestMaskAND,
+      maskAND: displayMask,
       looksLike: bestLooksLike,
       targetScore: bestTargetScore,
     })
