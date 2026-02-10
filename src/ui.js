@@ -184,7 +184,7 @@ export function setupFinder() {
   // Show the 26-card grid when known letter changes (no target matching)
   // Clear direct match and grid when letter is cleared
   els.knownLetter.addEventListener('input', () => {
-    clearEl(els.directMatch)
+    if (!parseLetter(els.knownLetter)) clearEl(els.directMatch)
     updateFinder(false)
   })
 
