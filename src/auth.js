@@ -37,16 +37,18 @@ export async function unlock(sessionId) {
   return data
 }
 
-/** Check if an email has a completed purchase */
-export async function checkEmail(email) {
+/** Check if an email has a completed purchase, or admin password */
+export async function checkEmail(email, password) {
+  const body = { email }
+  if (password) body.password = password
   const res = await fetch('/api/check-access', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email }),
+    body: JSON.stringify(body),
   })
   const data = await res.json()
   if (data.access) {
-    setStored({ access: true, email })
+    setStored({ access: true, email: data.admin ? 'admin' : email })
   }
   return data
 }

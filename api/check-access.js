@@ -7,9 +7,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { email } = req.body
+  const { email, password } = req.body
   if (!email) {
     return res.status(400).json({ error: 'Email is required' })
+  }
+
+  // Admin login check
+  if (password && process.env.ADMIN_PASSWORD && password === process.env.ADMIN_PASSWORD) {
+    return res.status(200).json({ access: true, admin: true })
   }
 
   try {

@@ -99,10 +99,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   })
 
-  // Sign in with email (already purchased)
+  // Sign in with email (already purchased or admin)
+  const paywallPassword = document.getElementById('paywallPassword')
   paywallSigninBtn.addEventListener('click', async () => {
     const email = paywallEmail.value.trim()
-    if (!email || !email.includes('@')) {
+    const password = paywallPassword.value
+    if (!email) {
       setStatus('Please enter your email address above first.', true)
       return
     }
@@ -110,7 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     paywallSigninBtn.textContent = 'Checking...'
     setStatus('', false)
     try {
-      const result = await checkEmail(email)
+      const result = await checkEmail(email, password)
       if (result.access) {
         setUnlockedUI()
       } else {
@@ -120,7 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       setStatus('Error checking access. Please try again.', true)
     }
     paywallSigninBtn.disabled = false
-    paywallSigninBtn.textContent = 'Already purchased? Sign in with your email'
+    paywallSigninBtn.textContent = 'Already purchased? Sign in'
   })
 
   // Logout
