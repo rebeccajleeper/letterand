@@ -1,25 +1,19 @@
 // UI logic for combiner + finder modes
 
 import {
-  CELL, ALPHABET, buildLetterMasks, buildAllFontMasks, andMasks,
+  CELL, ALPHABET, buildLetterMasks, andMasks,
   drawMask, findBestMatches, matchScore,
 } from './engine.js'
 
 // Default font size (maps to 300px on the 200x200 canvas)
 const FONT_SIZE = 120
 
-// Cached letter masks — single font for combiner display, all fonts for finder
+// Cached letter masks
 let masks = null
-let allFontMasks = null
 
 function getMasks() {
   if (!masks) masks = buildLetterMasks(FONT_SIZE)
   return masks
-}
-
-function getAllFontMasks() {
-  if (!allFontMasks) allFontMasks = buildAllFontMasks(FONT_SIZE)
-  return allFontMasks
 }
 
 // ── DOM refs ───────────────────────────────────────────
@@ -270,17 +264,8 @@ function updateDirectMatch() {
   clearEl(els.directMatch)
   if (!targetMask) return
 
-  // Try all fonts and keep best score per letter
-  const bestByLetter = {}
-  for (const { masks: m } of getAllFontMasks()) {
-    for (const ch of ALPHABET) {
-      const score = matchScore(m[ch], targetMask)
-      if (!bestByLetter[ch] || score > bestByLetter[ch]) {
-        bestByLetter[ch] = score
-      }
-    }
-  }
-  const results = Object.entries(bestByLetter).map(([ch, score]) => ({ ch, score }))
+  const m = getMasks()
+  const results = ALPHABET.map(ch => ({ ch, score: matchScore(m[ch], targetMask) }))
   results.sort((a, b) => b.score - a.score)
 
   const container = document.createElement('div')
@@ -332,41 +317,15 @@ export function updateFinder(solve = false) {
   // Only use target matching when Solve was clicked
   const useTarget = solve && targetMask
 
-  // Build all 26 AND combinations across all fonts (keep best per candidate)
-  const fontSets = getAllFontMasks()
+  const m = getMasks()
   const results = []
 
   for (const ch of ALPHABET) {
-    // Always use the default font for the displayed AND canvas (keeps it stable)
-    const displayMask = andMasks(fontSets[0].masks[known], fontSets[0].masks[ch])
+    const maskAND = andMasks(m[known], m[ch])
+    const looksLike = findBestMatches(maskAND, m, 1)[0]
+    const targetScore = useTarget ? matchScore(maskAND, targetMask) : null
 
-    // Score across all fonts for target matching (only when solving)
-    let bestTargetScore = null
-    if (useTarget) {
-      for (const { masks: m } of fontSets) {
-        const maskAND = andMasks(m[known], m[ch])
-        const score = matchScore(maskAND, targetMask)
-        if (bestTargetScore === null || score > bestTargetScore) {
-          bestTargetScore = score
-        }
-      }
-    }
-
-    // Find what this AND result looks like (compare display mask across all font libraries)
-    let bestLooksLike = { ch: '?', score: 0 }
-    for (const { masks: m } of fontSets) {
-      const matches = findBestMatches(displayMask, m, 1)
-      if (matches[0].score > bestLooksLike.score) {
-        bestLooksLike = matches[0]
-      }
-    }
-
-    results.push({
-      ch,
-      maskAND: displayMask,
-      looksLike: bestLooksLike,
-      targetScore: bestTargetScore,
-    })
+    results.push({ ch, maskAND, looksLike, targetScore })
   }
 
   // Sort by target score only when solving
