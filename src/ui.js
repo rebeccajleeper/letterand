@@ -33,6 +33,7 @@ export function initElements() {
     targetPreview: document.getElementById('targetPreview'),
     dropZone: document.getElementById('dropZone'),
     dropZoneContent: document.getElementById('dropZoneContent'),
+    solveBtn: document.getElementById('solveBtn'),
     finderResult: document.getElementById('finderResult'),
     finderGrid: document.getElementById('finderGrid'),
   }
@@ -173,8 +174,16 @@ export function setupFinder() {
     if (file && file.type.startsWith('image/')) loadTargetFile(file)
   })
 
-  // Known letter input
-  els.knownLetter.addEventListener('input', updateFinder)
+  // Enable/disable solve button based on inputs
+  els.knownLetter.addEventListener('input', checkSolveReady)
+
+  // Solve button
+  els.solveBtn.addEventListener('click', updateFinder)
+}
+
+function checkSolveReady() {
+  const known = parseLetter(els.knownLetter)
+  els.solveBtn.disabled = !(known && targetMask)
 }
 
 function loadTargetFile(file) {
@@ -186,7 +195,7 @@ function loadTargetFile(file) {
       targetMask = imageToMask(img)
       showTargetPreview(img)
       els.dropZone.classList.add('has-file')
-      updateFinder()
+      checkSolveReady()
     }
     img.src = ev.target.result
   }
@@ -227,73 +236,34 @@ export function updateFinder() {
   clearEl(els.finderGrid)
 
   const known = parseLetter(els.knownLetter)
+  if (!known || !targetMask) return
 
-  if (!known && !targetMask) {
-    const msg = document.createElement('p')
-    msg.className = 'finder-empty'
-    msg.textContent = 'Enter a known letter and upload a target image to find the missing letter.'
-    els.finderGrid.appendChild(msg)
-    return
-  }
-
-  if (!known) {
-    const msg = document.createElement('p')
-    msg.className = 'finder-empty'
-    msg.textContent = 'Now enter the known letter to find the match.'
-    els.finderGrid.appendChild(msg)
-    return
-  }
-
-  if (!targetMask) {
-    const msg = document.createElement('p')
-    msg.className = 'finder-empty'
-    msg.textContent = 'Upload a target image to find which letter creates it.'
-    els.finderGrid.appendChild(msg)
-    return
-  }
-
-  // Try all 26 letters in both positions, pick the best
   const m = getMasks()
   const results = []
 
   for (const ch of ALPHABET) {
-    // Try known as A, candidate as B
-    const maskAB = andMasks(m[known], m[ch])
-    const scoreAB = matchScore(maskAB, targetMask)
-
-    // Try candidate as A, known as B
-    const maskBA = andMasks(m[ch], m[known])
-    const scoreBA = matchScore(maskBA, targetMask)
-
-    // Pick whichever position scored better
-    const bestPos = scoreAB >= scoreBA ? 'a' : 'b'
-    const bestScore = Math.max(scoreAB, scoreBA)
-    const bestMask = bestPos === 'a' ? maskAB : maskBA
-
-    results.push({
-      ch,
-      pos: bestPos,
-      score: bestScore,
-      maskAND: bestMask,
-    })
+    const maskAND = andMasks(m[known], m[ch])
+    const score = matchScore(maskAND, targetMask)
+    results.push({ ch, score, maskAND })
   }
 
   results.sort((a, b) => b.score - a.score)
 
   // Show prominent best match
   const best = results[0]
-  const resultDiv = els.finderResult
 
   const resultCard = document.createElement('div')
   resultCard.className = 'finder-best-match'
 
   const resultLabel = document.createElement('div')
   resultLabel.className = 'finder-best-label'
-  resultLabel.textContent = 'Best match'
+  resultLabel.textContent = 'Missing letter'
 
   const resultLetter = document.createElement('div')
   resultLetter.className = 'finder-best-letter'
   resultLetter.textContent = best.ch
+
+  const resultCanvas = makeCanvas(best.maskAND, 34, 34, 34, 100)
 
   const resultScore = document.createElement('div')
   resultScore.className = 'finder-best-score'
@@ -301,55 +271,40 @@ export function updateFinder() {
 
   const resultExplain = document.createElement('div')
   resultExplain.className = 'finder-best-explain'
-  if (best.pos === 'a') {
-    resultExplain.innerHTML = `<span class="hl-a">${known}</span> <span class="op">&</span> <span class="hl-b">${best.ch}</span> creates this image`
-  } else {
-    resultExplain.innerHTML = `<span class="hl-a">${best.ch}</span> <span class="op">&</span> <span class="hl-b">${known}</span> creates this image`
-  }
-
-  const resultCanvas = makeCanvas(best.maskAND, 34, 34, 34, 100)
+  resultExplain.innerHTML = `<span class="hl-a">${known}</span> <span class="op">&</span> <span class="hl-b">${best.ch}</span> produces this image`
 
   resultCard.appendChild(resultLabel)
   resultCard.appendChild(resultLetter)
   resultCard.appendChild(resultCanvas)
   resultCard.appendChild(resultScore)
   resultCard.appendChild(resultExplain)
-  resultDiv.appendChild(resultCard)
+  els.finderResult.appendChild(resultCard)
 
-  // Show runner-ups in grid
-  const runnersLabel = document.createElement('div')
-  runnersLabel.className = 'finder-runners-label'
-  runnersLabel.textContent = 'Other candidates'
+  // Show top 5 runner-ups
+  if (results.length > 1) {
+    const runnersLabel = document.createElement('div')
+    runnersLabel.className = 'finder-runners-label'
+    runnersLabel.textContent = 'Other candidates'
+    els.finderGrid.appendChild(runnersLabel)
 
-  els.finderGrid.appendChild(runnersLabel)
+    for (let i = 1; i < Math.min(results.length, 6); i++) {
+      const r = results[i]
+      const card = document.createElement('div')
+      card.className = 'finder-card'
 
-  for (let i = 1; i < results.length; i++) {
-    const r = results[i]
-    const card = document.createElement('div')
-    card.className = 'finder-card'
-    if (r.score > 0.7) card.classList.add('high-match')
-
-    const header = document.createElement('div')
-    header.className = 'card-header'
-    if (r.pos === 'a') {
+      const header = document.createElement('div')
+      header.className = 'card-header'
       header.innerHTML = `<span class="hl-a">${known}</span> & <span class="hl-b">${r.ch}</span>`
-    } else {
-      header.innerHTML = `<span class="hl-a">${r.ch}</span> & <span class="hl-b">${known}</span>`
+      card.appendChild(header)
+
+      card.appendChild(makeCanvas(r.maskAND, 34, 34, 34, 64))
+
+      const score = document.createElement('div')
+      score.className = 'card-score'
+      score.textContent = `${(r.score * 100).toFixed(0)}%`
+      card.appendChild(score)
+
+      els.finderGrid.appendChild(card)
     }
-    card.appendChild(header)
-
-    card.appendChild(makeCanvas(r.maskAND, 34, 34, 34, 64))
-
-    const score = document.createElement('div')
-    score.className = 'card-score'
-    score.textContent = `${(r.score * 100).toFixed(0)}%`
-    card.appendChild(score)
-
-    const candidateLabel = document.createElement('div')
-    candidateLabel.className = 'card-candidate'
-    candidateLabel.textContent = r.ch
-    card.appendChild(candidateLabel)
-
-    els.finderGrid.appendChild(card)
   }
 }
