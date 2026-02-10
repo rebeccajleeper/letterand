@@ -29,11 +29,11 @@ export function initElements() {
     combinerSummary: document.getElementById('combinerSummary'),
     // Finder
     knownLetter: document.getElementById('knownLetter'),
-    posA: document.getElementById('posA'),
-    posB: document.getElementById('posB'),
     targetUpload: document.getElementById('targetUpload'),
     targetPreview: document.getElementById('targetPreview'),
     dropZone: document.getElementById('dropZone'),
+    dropZoneContent: document.getElementById('dropZoneContent'),
+    finderResult: document.getElementById('finderResult'),
     finderGrid: document.getElementById('finderGrid'),
   }
 }
@@ -125,25 +125,6 @@ export function updateCombiner() {
   groupAND.appendChild(makeCanvas(maskAND, 34, 34, 34, 120))
   row.appendChild(groupAND)
 
-  // Arrow =>
-  const opArrow = document.createElement('span')
-  opArrow.className = 'vis-op vis-arrow'
-  opArrow.textContent = '\u2192'
-  row.appendChild(opArrow)
-
-  // Best match letter
-  const groupMatch = document.createElement('div')
-  groupMatch.className = 'vis-group vis-match'
-  const matchLetter = document.createElement('div')
-  matchLetter.className = 'match-letter'
-  matchLetter.textContent = best[0].ch
-  groupMatch.appendChild(matchLetter)
-  const matchScore = document.createElement('div')
-  matchScore.className = 'match-score'
-  matchScore.textContent = `${(best[0].score * 100).toFixed(0)}% match`
-  groupMatch.appendChild(matchScore)
-  row.appendChild(groupMatch)
-
   // Summary text
   const summary = els.combinerSummary
   const p1 = document.createElement('p')
@@ -163,23 +144,8 @@ export function updateCombiner() {
 
 let targetImage = null
 let targetMask = null
-let knownPos = 'a' // 'a' means the known letter is in position A
 
 export function setupFinder() {
-  // Position toggle
-  els.posA.addEventListener('click', () => {
-    knownPos = 'a'
-    els.posA.classList.add('active')
-    els.posB.classList.remove('active')
-    updateFinder()
-  })
-  els.posB.addEventListener('click', () => {
-    knownPos = 'b'
-    els.posB.classList.add('active')
-    els.posA.classList.remove('active')
-    updateFinder()
-  })
-
   // File upload (click)
   els.targetUpload.addEventListener('change', (e) => {
     const file = e.target.files[0]
@@ -240,98 +206,145 @@ function imageToMask(img) {
 
 function showTargetPreview(img) {
   clearEl(els.targetPreview)
-  const h = 80
-  const w = Math.round(img.width * (h / img.height))
+  const sz = 80
   const cv = document.createElement('canvas')
-  cv.width = w
-  cv.height = h
-  cv.style.width = w + 'px'
-  cv.style.height = h + 'px'
+  cv.width = sz
+  cv.height = sz
+  cv.style.width = sz + 'px'
+  cv.style.height = sz + 'px'
   cv.className = 'target-canvas'
   const ctx = cv.getContext('2d')
-  ctx.drawImage(img, 0, 0, w, h)
-
-  const label = document.createElement('span')
-  label.className = 'target-label'
-  label.textContent = 'Target:'
-  els.targetPreview.appendChild(label)
+  ctx.drawImage(img, 0, 0, sz, sz)
   els.targetPreview.appendChild(cv)
+
+  // Hide the upload prompt, show preview
+  els.dropZoneContent.style.display = 'none'
+  els.targetPreview.style.display = 'flex'
 }
 
 export function updateFinder() {
+  clearEl(els.finderResult)
   clearEl(els.finderGrid)
 
   const known = parseLetter(els.knownLetter)
-  if (!known) {
+
+  if (!known && !targetMask) {
     const msg = document.createElement('p')
     msg.className = 'finder-empty'
-    msg.textContent = 'Enter a known letter above to see all 26 AND combinations.'
+    msg.textContent = 'Enter a known letter and upload a target image to find the missing letter.'
     els.finderGrid.appendChild(msg)
     return
   }
 
+  if (!known) {
+    const msg = document.createElement('p')
+    msg.className = 'finder-empty'
+    msg.textContent = 'Now enter the known letter to find the match.'
+    els.finderGrid.appendChild(msg)
+    return
+  }
+
+  if (!targetMask) {
+    const msg = document.createElement('p')
+    msg.className = 'finder-empty'
+    msg.textContent = 'Upload a target image to find which letter creates it.'
+    els.finderGrid.appendChild(msg)
+    return
+  }
+
+  // Try all 26 letters in both positions, pick the best
   const m = getMasks()
   const results = []
 
   for (const ch of ALPHABET) {
-    const maskA = knownPos === 'a' ? m[known] : m[ch]
-    const maskB = knownPos === 'a' ? m[ch] : m[known]
-    const maskAND = andMasks(maskA, maskB)
-    const bestMatch = findBestMatches(maskAND, m, 1)[0]
+    // Try known as A, candidate as B
+    const maskAB = andMasks(m[known], m[ch])
+    const scoreAB = matchScore(maskAB, targetMask)
 
-    let targetScore = null
-    if (targetMask) {
-      targetScore = matchScore(maskAND, targetMask)
-    }
+    // Try candidate as A, known as B
+    const maskBA = andMasks(m[ch], m[known])
+    const scoreBA = matchScore(maskBA, targetMask)
+
+    // Pick whichever position scored better
+    const bestPos = scoreAB >= scoreBA ? 'a' : 'b'
+    const bestScore = Math.max(scoreAB, scoreBA)
+    const bestMask = bestPos === 'a' ? maskAB : maskBA
 
     results.push({
       ch,
-      maskAND,
-      bestMatch,
-      targetScore,
+      pos: bestPos,
+      score: bestScore,
+      maskAND: bestMask,
     })
   }
 
-  // Sort by target score (best first) if target uploaded, otherwise alphabetical
-  if (targetMask) {
-    results.sort((a, b) => b.targetScore - a.targetScore)
+  results.sort((a, b) => b.score - a.score)
+
+  // Show prominent best match
+  const best = results[0]
+  const resultDiv = els.finderResult
+
+  const resultCard = document.createElement('div')
+  resultCard.className = 'finder-best-match'
+
+  const resultLabel = document.createElement('div')
+  resultLabel.className = 'finder-best-label'
+  resultLabel.textContent = 'Best match'
+
+  const resultLetter = document.createElement('div')
+  resultLetter.className = 'finder-best-letter'
+  resultLetter.textContent = best.ch
+
+  const resultScore = document.createElement('div')
+  resultScore.className = 'finder-best-score'
+  resultScore.textContent = `${(best.score * 100).toFixed(0)}% match`
+
+  const resultExplain = document.createElement('div')
+  resultExplain.className = 'finder-best-explain'
+  if (best.pos === 'a') {
+    resultExplain.innerHTML = `<span class="hl-a">${known}</span> <span class="op">&</span> <span class="hl-b">${best.ch}</span> creates this image`
+  } else {
+    resultExplain.innerHTML = `<span class="hl-a">${best.ch}</span> <span class="op">&</span> <span class="hl-b">${known}</span> creates this image`
   }
 
-  for (const r of results) {
+  const resultCanvas = makeCanvas(best.maskAND, 34, 34, 34, 100)
+
+  resultCard.appendChild(resultLabel)
+  resultCard.appendChild(resultLetter)
+  resultCard.appendChild(resultCanvas)
+  resultCard.appendChild(resultScore)
+  resultCard.appendChild(resultExplain)
+  resultDiv.appendChild(resultCard)
+
+  // Show runner-ups in grid
+  const runnersLabel = document.createElement('div')
+  runnersLabel.className = 'finder-runners-label'
+  runnersLabel.textContent = 'Other candidates'
+
+  els.finderGrid.appendChild(runnersLabel)
+
+  for (let i = 1; i < results.length; i++) {
+    const r = results[i]
     const card = document.createElement('div')
     card.className = 'finder-card'
-    if (r.targetScore !== null && r.targetScore > 0.7) {
-      card.classList.add('high-match')
-    }
+    if (r.score > 0.7) card.classList.add('high-match')
 
-    // Header: which two letters
     const header = document.createElement('div')
     header.className = 'card-header'
-    if (knownPos === 'a') {
+    if (r.pos === 'a') {
       header.innerHTML = `<span class="hl-a">${known}</span> & <span class="hl-b">${r.ch}</span>`
     } else {
       header.innerHTML = `<span class="hl-a">${r.ch}</span> & <span class="hl-b">${known}</span>`
     }
     card.appendChild(header)
 
-    // AND result canvas
     card.appendChild(makeCanvas(r.maskAND, 34, 34, 34, 64))
 
-    // What it looks like
-    const looks = document.createElement('div')
-    looks.className = 'card-looks'
-    looks.innerHTML = `\u2192 <strong>${r.bestMatch.ch}</strong>`
-    card.appendChild(looks)
+    const score = document.createElement('div')
+    score.className = 'card-score'
+    score.textContent = `${(r.score * 100).toFixed(0)}%`
+    card.appendChild(score)
 
-    // Target match score (if uploaded)
-    if (r.targetScore !== null) {
-      const score = document.createElement('div')
-      score.className = 'card-score'
-      score.textContent = `${(r.targetScore * 100).toFixed(0)}% target match`
-      card.appendChild(score)
-    }
-
-    // The candidate letter large
     const candidateLabel = document.createElement('div')
     candidateLabel.className = 'card-candidate'
     candidateLabel.textContent = r.ch

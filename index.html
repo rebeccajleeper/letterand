@@ -67,39 +67,37 @@
     <!-- SECTION 2: Letter Finder                       -->
     <!-- ═══════════════════════════════════════════════ -->
     <section class="finder-section">
-      <h2>Find the matching letter</h2>
-      <p class="section-desc">Have an image and know one of the letters? Upload it and we'll try every letter for the other position to find the best match.</p>
+      <h2>Find the missing letter</h2>
+      <p class="section-desc">Upload an image and enter the letter you know — we'll find which letter combines with it to create that image.</p>
 
       <div class="finder-controls">
         <div class="finder-row">
           <div class="letter-input-group">
             <label for="knownLetter">Known letter</label>
-            <input type="text" id="knownLetter" maxlength="1" value="O" class="letter-input input-known" spellcheck="false" autocomplete="off">
+            <input type="text" id="knownLetter" maxlength="1" value="" class="letter-input input-known" spellcheck="false" autocomplete="off" placeholder="?">
           </div>
-          <div class="position-toggle">
-            <label>Position</label>
-            <div class="toggle-btns">
-              <button class="toggle-btn active" id="posA" data-pos="a">A (first)</button>
-              <button class="toggle-btn" id="posB" data-pos="b">B (second)</button>
+          <div class="finder-plus">&amp;</div>
+          <div class="drop-zone-inline" id="dropZone">
+            <div class="drop-zone-content" id="dropZoneContent">
+              <div class="drop-icon">+</div>
+              <p>Upload target image</p>
+              <input type="file" id="targetUpload" accept="image/*" class="sr-only">
+            </div>
+            <div class="target-preview" id="targetPreview">
+              <!-- Shows uploaded target thumbnail -->
             </div>
           </div>
         </div>
-        <div class="drop-zone" id="dropZone">
-          <div class="drop-zone-content">
-            <div class="drop-icon">+</div>
-            <p>Drag & drop an image here</p>
-            <p class="drop-or">or</p>
-            <label class="browse-btn" for="targetUpload">Browse files</label>
-            <input type="file" id="targetUpload" accept="image/*" class="sr-only">
-          </div>
-        </div>
-        <div class="target-preview" id="targetPreview">
-          <!-- Shows uploaded target thumbnail -->
-        </div>
       </div>
 
+      <!-- Best match result (shown when image + known letter provided) -->
+      <div class="finder-result" id="finderResult">
+        <!-- Filled by JS: prominent best match display -->
+      </div>
+
+      <!-- All candidates grid -->
       <div class="finder-grid" id="finderGrid">
-        <!-- Filled by JS: 26 cards, one per letter -->
+        <!-- Filled by JS: ranked candidate cards -->
       </div>
     </section>
 
