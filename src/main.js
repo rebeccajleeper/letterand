@@ -80,11 +80,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     setLockedUI()
   }
 
-  // Buy button
+  // Sign in button (primary — handles both admin and email lookup)
+  const paywallPassword = document.getElementById('paywallPassword')
+  paywallSigninBtn.addEventListener('click', async () => {
+    const email = paywallEmail.value.trim()
+    const password = paywallPassword.value
+    if (!email) {
+      setStatus('Please enter your email or username.', true)
+      return
+    }
+    paywallSigninBtn.disabled = true
+    paywallSigninBtn.textContent = 'Signing in...'
+    setStatus('', false)
+    try {
+      const result = await checkEmail(email, password)
+      if (result.access) {
+        setUnlockedUI()
+      } else {
+        setStatus('Invalid credentials. Check your email/username and password, or purchase access below.', true)
+      }
+    } catch {
+      setStatus('Error signing in. Please try again.', true)
+    }
+    paywallSigninBtn.disabled = false
+    paywallSigninBtn.textContent = 'Sign In'
+  })
+
+  // Buy button (secondary — Stripe checkout)
   paywallBuyBtn.addEventListener('click', async () => {
     const email = paywallEmail.value.trim()
     if (!email || !email.includes('@')) {
-      setStatus('Please enter a valid email address.', true)
+      setStatus('Please enter a valid email address to purchase.', true)
       return
     }
     paywallBuyBtn.disabled = true
@@ -95,34 +121,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch {
       setStatus('Error starting checkout. Please try again.', true)
       paywallBuyBtn.disabled = false
-      paywallBuyBtn.textContent = 'Unlock Word Mode'
+      paywallBuyBtn.textContent = 'Purchase access — $4.99 one-time'
     }
-  })
-
-  // Sign in with email (already purchased or admin)
-  const paywallPassword = document.getElementById('paywallPassword')
-  paywallSigninBtn.addEventListener('click', async () => {
-    const email = paywallEmail.value.trim()
-    const password = paywallPassword.value
-    if (!email) {
-      setStatus('Please enter your email address above first.', true)
-      return
-    }
-    paywallSigninBtn.disabled = true
-    paywallSigninBtn.textContent = 'Checking...'
-    setStatus('', false)
-    try {
-      const result = await checkEmail(email, password)
-      if (result.access) {
-        setUnlockedUI()
-      } else {
-        setStatus('No purchase found for this email. Try a different email or purchase below.', true)
-      }
-    } catch {
-      setStatus('Error checking access. Please try again.', true)
-    }
-    paywallSigninBtn.disabled = false
-    paywallSigninBtn.textContent = 'Already purchased? Sign in'
   })
 
   // Logout
