@@ -1512,6 +1512,10 @@ async function initAccessState() {
         isUnlocked = true;
         isAdmin = !!linkResult.admin;
         setStored({ access: true, email: linkResult.email || magicEmail, admin: !!linkResult.admin });
+        localStorage.removeItem('previewGens_v2');
+        previewGenerations = 0;
+        updateModeUI();
+        syncValidity();
         setPaywallStatus('Sign-in complete. Full mode unlocked.', false);
         window.history.replaceState({}, '', window.location.pathname);
         return;
@@ -1533,6 +1537,10 @@ async function initAccessState() {
         isUnlocked = true;
         isAdmin = false;
         setStored({ access: true, email: result.email || (paywallEmail.value || '').trim(), admin: false });
+        localStorage.removeItem('previewGens_v2');
+        previewGenerations = 0;
+        updateModeUI();
+        syncValidity();
         setPaywallStatus('Payment verified. Full mode unlocked.', false);
         window.history.replaceState({}, '', window.location.pathname);
       } else {
@@ -1546,6 +1554,8 @@ async function initAccessState() {
     if (stored && stored.access) {
       isUnlocked = true;
       isAdmin = !!stored.admin;
+      localStorage.removeItem('previewGens_v2');
+      previewGenerations = 0;
       if (stored.email && stored.email !== 'admin') paywallEmail.value = stored.email;
       setPaywallStatus('Access restored on this device.', false);
     }
