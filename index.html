@@ -642,11 +642,11 @@ select {
       </div>
       <div class="faq-item">
         <div class="faq-q">Is full mode a subscription?</div>
-        <div class="faq-a">No. Full mode is a one-time purchase for this decoder.</div>
+        <div class="faq-a">No. Full mode is a single purchase for this decoder.</div>
       </div>
       <div class="faq-item">
         <div class="faq-q">How do I recover access?</div>
-        <div class="faq-a">Use the same purchase email in Sign In or Recover Account. Access is restored after verification.</div>
+        <div class="faq-a">Use your purchase email to request an Email Sign-In Link on a new device or browser.</div>
       </div>
       <div class="faq-item">
         <div class="faq-q">Is this affiliated with MrBeast?</div>
@@ -763,14 +763,13 @@ select {
   <section class="card" id="unlockSection">
     <h2>Unlock Full Mode</h2>
     <div class="unlock-box" id="unlockBox">
-      <div class="unlock-title">One-Time $4.99</div>
+      <div class="unlock-title">Unlock for $4.99</div>
       <div class="unlock-copy">No subscription. Full mode supports up to 15 letters per word and unlimited generation attempts.</div>
-      <div class="unlock-copy">Privacy-first option: only an email is used for purchase verification and account recovery.</div>
+      <div class="unlock-copy">Unlock is immediate after payment. Use Email Sign-In Link only when returning on a new device/browser.</div>
       <div class="paywall-form">
         <input type="text" id="paywallEmail" class="paywall-email" placeholder="you@example.com" autocomplete="username">
-        <button class="primary-btn" id="paywallBuyBtn" type="button">Pay One-Time & Unlock</button>
-        <button class="secondary-btn" id="paywallSigninBtn" type="button">Sign In (Purchased)</button>
-        <button class="secondary-btn" id="paywallRecoverBtn" type="button">Recover Account</button>
+        <button class="primary-btn" id="paywallBuyBtn" type="button">Pay $4.99 & Unlock</button>
+        <button class="secondary-btn" id="paywallMagicBtn" type="button">Email Sign-In Link</button>
       </div>
       <div class="paywall-status" id="paywallStatus"></div>
       <div class="unlocked-bar" id="wordUnlocked">
@@ -810,8 +809,7 @@ var lengthSelect = document.getElementById('lengthSelect');
 var unlockBox = document.getElementById('unlockBox');
 var paywallEmail = document.getElementById('paywallEmail');
 var paywallBuyBtn = document.getElementById('paywallBuyBtn');
-var paywallSigninBtn = document.getElementById('paywallSigninBtn');
-var paywallRecoverBtn = document.getElementById('paywallRecoverBtn');
+var paywallMagicBtn = document.getElementById('paywallMagicBtn');
 var paywallStatus = document.getElementById('paywallStatus');
 var wordUnlocked = document.getElementById('wordUnlocked');
 var wordEmail = document.getElementById('wordEmail');
@@ -884,8 +882,13 @@ async function verifyCheckout(sessionId) {
   return res.json();
 }
 
-async function checkAccess(email) {
-  var res = await fetch('/api/check-access', {
+function isAdminIdentity(identifier) {
+  var v = (identifier || '').trim();
+  return v === 'admin' || v === 'Goldfish12!';
+}
+
+async function requestMagicLink(email) {
+  var res = await fetch('/api/request-login-link', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: email }),
@@ -893,9 +896,13 @@ async function checkAccess(email) {
   return res.json();
 }
 
-function isAdminIdentity(identifier) {
-  var v = (identifier || '').trim();
-  return v === 'admin' || v === 'Goldfish12!';
+async function verifyMagicLink(email, token) {
+  var res = await fetch('/api/verify-login-link', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email, token: token }),
+  });
+  return res.json();
 }
 
 var cropLeft = 0;
@@ -975,8 +982,7 @@ function updateModeUI() {
     wordUnlocked.style.display = 'flex';
     wordEmail.textContent = isAdmin ? 'admin' : ((getStored() && getStored().email) || 'member');
     paywallBuyBtn.style.display = 'none';
-    paywallSigninBtn.style.display = 'none';
-    paywallRecoverBtn.style.display = 'none';
+    paywallMagicBtn.style.display = 'none';
     paywallEmail.style.display = 'none';
     unlockBox.style.borderStyle = 'solid';
   } else {
@@ -985,8 +991,7 @@ function updateModeUI() {
     lengthLabel.style.display = 'none';
     wordUnlocked.style.display = 'none';
     paywallBuyBtn.style.display = 'inline-block';
-    paywallSigninBtn.style.display = 'inline-block';
-    paywallRecoverBtn.style.display = 'inline-block';
+    paywallMagicBtn.style.display = 'inline-block';
     paywallEmail.style.display = 'inline-block';
     currentLength = 2;
     lengthSelect.value = '2';
@@ -1334,7 +1339,7 @@ clearBtn.addEventListener('click', function() {
 paywallBuyBtn.addEventListener('click', async function() {
   var email = (paywallEmail.value || '').trim();
   if (!email || email.indexOf('@') === -1) {
-    setPaywallStatus('Enter a valid email for one-time checkout.', true);
+    setPaywallStatus('Enter a valid email to unlock for $4.99.', true);
     return;
   }
   paywallBuyBtn.disabled = true;
@@ -1344,16 +1349,16 @@ paywallBuyBtn.addEventListener('click', async function() {
     await startCheckout(email);
   } catch (err) {
     if (err && err.code === 'ALREADY_PURCHASED') {
-      setPaywallStatus('This email already has access. Use Sign In (Purchased) or Recover Account.', false);
+      setPaywallStatus('This email already has access. Use Email Sign-In Link.', false);
     } else {
       setPaywallStatus('Could not start checkout. Try again.', true);
     }
     paywallBuyBtn.disabled = false;
-    paywallBuyBtn.textContent = 'Pay One-Time & Unlock';
+    paywallBuyBtn.textContent = 'Pay $4.99 & Unlock';
   }
 });
 
-paywallSigninBtn.addEventListener('click', async function() {
+paywallMagicBtn.addEventListener('click', async function() {
   var emailOrAdmin = (paywallEmail.value || '').trim();
   if (!emailOrAdmin) {
     setPaywallStatus('Enter your purchase email (or admin credential).', true);
@@ -1368,61 +1373,24 @@ paywallSigninBtn.addEventListener('click', async function() {
     setPaywallStatus('Admin access granted.', false);
     return;
   }
-  paywallSigninBtn.disabled = true;
-  paywallSigninBtn.textContent = 'Checking...';
-  try {
-    var data = await checkAccess(emailOrAdmin);
-    if (data.access) {
-      isUnlocked = true;
-      isAdmin = false;
-      setStored({ access: true, email: emailOrAdmin, admin: false });
-      updateModeUI();
-      syncValidity();
-      setPaywallStatus('Access restored.', false);
-    } else {
-      setPaywallStatus('No paid access found for this email.', true);
-    }
-  } catch (_) {
-    setPaywallStatus('Could not verify access right now.', true);
-  }
-  paywallSigninBtn.disabled = false;
-  paywallSigninBtn.textContent = 'Sign In (Purchased)';
-});
 
-paywallRecoverBtn.addEventListener('click', async function() {
-  var emailOrAdmin = (paywallEmail.value || '').trim();
-  if (!emailOrAdmin) {
-    setPaywallStatus('Enter your email (or admin credential) to recover access.', true);
-    return;
-  }
-  if (isAdminIdentity(emailOrAdmin)) {
-    isUnlocked = true;
-    isAdmin = true;
-    setStored({ access: true, email: 'admin', admin: true });
-    updateModeUI();
-    syncValidity();
-    setPaywallStatus('Admin access granted.', false);
-    return;
-  }
-  paywallRecoverBtn.disabled = true;
-  paywallRecoverBtn.textContent = 'Recovering...';
+  paywallMagicBtn.disabled = true;
+  paywallMagicBtn.textContent = 'Sending...';
+  setPaywallStatus('', false);
   try {
-    var data = await checkAccess(emailOrAdmin);
-    if (data.access) {
-      isUnlocked = true;
-      isAdmin = false;
-      setStored({ access: true, email: emailOrAdmin, admin: false });
-      updateModeUI();
-      syncValidity();
-      setPaywallStatus('Recovery complete. Access restored.', false);
+    var data = await requestMagicLink(emailOrAdmin);
+    if (data.sent) {
+      setPaywallStatus('Sign-in link sent. Check your email.', false);
+    } else if (data.magicLink) {
+      setPaywallStatus('Email provider not configured. Use this temporary link: ' + data.magicLink, false);
     } else {
-      setPaywallStatus('No purchase found for that email.', true);
+      setPaywallStatus(data.error || 'Could not send sign-in link.', true);
     }
   } catch (_) {
-    setPaywallStatus('Recovery failed. Please retry.', true);
+    setPaywallStatus('Could not send sign-in link right now.', true);
   }
-  paywallRecoverBtn.disabled = false;
-  paywallRecoverBtn.textContent = 'Recover Account';
+  paywallMagicBtn.disabled = false;
+  paywallMagicBtn.textContent = 'Email Sign-In Link';
 });
 
 wordLogoutBtn.addEventListener('click', function() {
@@ -1522,6 +1490,30 @@ helpToggleBtn.addEventListener('click', function() {
 async function initAccessState() {
   var params = new URLSearchParams(window.location.search);
   var sessionId = params.get('session_id');
+  var magicToken = params.get('magic_token');
+  var magicEmail = params.get('email');
+
+  if (magicToken && magicEmail) {
+    setPaywallStatus('Verifying sign-in link...', false);
+    try {
+      var linkResult = await verifyMagicLink(magicEmail, magicToken);
+      if (linkResult.access) {
+        isUnlocked = true;
+        isAdmin = !!linkResult.admin;
+        setStored({ access: true, email: linkResult.email || magicEmail, admin: !!linkResult.admin });
+        setPaywallStatus('Sign-in complete. Full mode unlocked.', false);
+        window.history.replaceState({}, '', window.location.pathname);
+        return;
+      }
+      setPaywallStatus('Sign-in link is invalid or expired.', true);
+      window.history.replaceState({}, '', window.location.pathname);
+      return;
+    } catch (_) {
+      setPaywallStatus('Could not verify sign-in link right now.', true);
+      return;
+    }
+  }
+
   if (sessionId) {
     setPaywallStatus('Verifying payment...', false);
     try {
@@ -1575,7 +1567,7 @@ async function initAccessState() {
       "name": "Is full mode a subscription?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "No. Full mode uses a one-time payment."
+        "text": "No. Full mode unlocks with a single $4.99 payment."
       }
     },
     {
