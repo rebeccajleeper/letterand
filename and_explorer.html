@@ -1305,9 +1305,7 @@ function generate() {
   if (!isUnlocked) {
     previewGenerations += 1;
     localStorage.setItem('previewGens', previewGenerations);
-    if (previewGenerations >= 1) {
-      setError('Preview complete. Unlock full mode for additional generations.');
-    }
+    syncValidity();
   }
 
   lastState = {
