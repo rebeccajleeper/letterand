@@ -789,7 +789,7 @@ var STORAGE_KEY = 'letterand_access';
 
 var isUnlocked = false;
 var isAdmin = false;
-var previewGenerations = parseInt(localStorage.getItem('previewGens') || '0', 10);
+var previewGenerations = parseInt(localStorage.getItem('previewGens_v2') || '0', 10);
 var currentLength = 1;
 var cropImage = null;
 var clueDisplayHeight = 72;
@@ -1298,7 +1298,7 @@ function generate() {
 
   if (!isUnlocked) {
     previewGenerations += 1;
-    localStorage.setItem('previewGens', previewGenerations);
+    localStorage.setItem('previewGens_v2', previewGenerations);
     syncValidity();
   }
 
@@ -1402,7 +1402,7 @@ wordLogoutBtn.addEventListener('click', function() {
   isUnlocked = false;
   isAdmin = false;
   previewGenerations = 0;
-  localStorage.removeItem('previewGens');
+  localStorage.removeItem('previewGens_v2');
   clearStored();
   updateModeUI();
   syncValidity();
