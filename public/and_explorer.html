@@ -847,6 +847,7 @@ var entryError = document.getElementById('entryError');
 var validityHint = document.getElementById('validityHint');
 var compareStatus = document.getElementById('compareStatus');
 var quickExampleVisual = document.getElementById('quickExampleVisual');
+var buildUnlockHint = document.getElementById('buildUnlockHint');
 var helpToggleBtn = document.getElementById('helpToggleBtn');
 var helpPanel = document.getElementById('helpPanel');
 
@@ -1005,6 +1006,7 @@ function updateModeUI() {
     paywallRecoverBtn.style.display = 'none';
     paywallEmail.style.display = 'none';
     unlockBox.style.borderStyle = 'solid';
+    buildUnlockHint.style.display = 'none';
     currentLength = 14;
   } else {
     modePill.textContent = 'Preview Mode: 1 generate, 1 letter per word';
@@ -1016,6 +1018,7 @@ function updateModeUI() {
     paywallEmail.style.display = 'inline-block';
     currentLength = 1;
     unlockBox.style.borderStyle = 'dashed';
+    buildUnlockHint.style.display = 'flex';
   }
   renderSlots(currentLength);
 }
@@ -1211,6 +1214,16 @@ function validateSlots() {
     return { ok: false, message: 'Preview generate used. Unlock full mode for more generations.' };
   }
 
+  if (isUnlocked) {
+    if (wordA.length === 0 || wordB.length === 0) {
+      return { ok: false, message: 'Enter at least 1 letter for each word.' };
+    }
+    if (wordA.length !== wordB.length) {
+      return { ok: false, message: 'Both words must have the same number of letters.' };
+    }
+    return { ok: true, message: 'Ready to generate (' + wordA.length + ' letters).' };
+  }
+
   if (wordA.length !== currentLength || wordB.length !== currentLength) {
     return { ok: false, message: 'Enter ' + currentLength + ' letter' + (currentLength === 1 ? '' : 's') + ' for each word.' };
   }
@@ -1234,6 +1247,7 @@ function generate() {
 
   var wordA = slotWord('a');
   var wordB = slotWord('b');
+  var genLength = isUnlocked ? wordA.length : currentLength;
 
   setError('');
   clearElement(resultGrid);
@@ -1244,7 +1258,7 @@ function generate() {
   var visibleWord = [];
   var andMaskList = [];
 
-  for (var i = 0; i < currentLength; i++) {
+  for (var i = 0; i < genLength; i++) {
     var chA = wordA[i];
     var chB = wordB[i];
     var maskA = letterMasks[chA];
