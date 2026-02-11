@@ -3,13 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Word Overlay Decoder</title>
-<meta name="description" content="Word Overlay Decoder helps solve overlap-letter puzzles by combining two words, scoring letter matches, and comparing results against a clue image.">
-<meta name="keywords" content="word overlay decoder, letter overlap solver, puzzle decoder, cipher puzzle, clue image comparison, viral puzzle solver">
-<meta property="og:title" content="Word Overlay Decoder">
-<meta property="og:description" content="Solve overlap-letter puzzle clues with visual matching, clue tools, and word-level decoding.">
+<title>Hidden Word Puzzle Decoder | Solve Overlapping Letter Puzzles Instantly</title>
+<meta name="description" content="Decode hidden word puzzles by overlapping two words and revealing the visible letters. The fastest overlapping word solver for MrBeast puzzles, viral challenges, and cipher clues.">
+<meta name="keywords" content="hidden word puzzle decoder, MrBeast puzzle solver, overlapping word solver, letter overlap decoder, viral puzzle solver, word overlay tool, cipher puzzle decoder">
+<meta property="og:title" content="Decode Hidden Word Puzzles in Seconds">
+<meta property="og:description" content="Enter two words, decode the overlapping letters, and reveal the hidden answer. Built for viral word challenges and puzzle competitions.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Hidden Word Puzzle Decoder">
+<meta name="twitter:description" content="Enter two overlapping words and see which letters survive. Solve the puzzle in seconds.">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
@@ -61,6 +63,13 @@ body {
   margin-bottom: 8px;
 }
 .subtitle { color: var(--text-muted); }
+.trust-line {
+  color: var(--accent-green);
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-top: 6px;
+  letter-spacing: 0.3px;
+}
 
 .card {
   background: linear-gradient(135deg, var(--bg-card), rgba(30, 30, 30, 0.6));
@@ -626,6 +635,39 @@ select {
   font-size: 0.9rem;
 }
 
+.coming-soon {
+  margin-top: 24px;
+  text-align: center;
+  padding: 20px;
+}
+
+.coming-soon h3 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+}
+
+.coming-soon-tools {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.coming-soon-item {
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 12px 10px;
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--text-dim);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
 @media (max-width: 640px) {
   .intro-layout {
     grid-template-columns: 1fr;
@@ -634,14 +676,20 @@ select {
   .card { padding: 16px; }
   .word-row label { width: 100%; }
   .row-label { width: 84px; text-align: left; }
+  .primary-btn { width: 100%; text-align: center; }
+  .entry-actions { gap: 8px; }
+  .letter-slots { gap: 6px; }
+  .letter-slot { width: 48px; height: 48px; font-size: 1.5rem; }
+  .coming-soon-tools { grid-template-columns: 1fr; }
 }
 </style>
 </head>
 <body>
 <div class="app">
   <header class="app-header">
-    <h1>Word Overlay Decoder</h1>
-    <p class="subtitle">Decode the visible letters created by overlapping two words</p>
+    <h1>Decode Hidden Word Puzzles in Seconds</h1>
+    <p class="subtitle">Enter two overlapping words and see which letters survive. Solve the puzzle in seconds.</p>
+    <p class="trust-line">Built for viral word challenges</p>
   </header>
   <div class="help-toggle-row">
     <button class="secondary-btn" id="helpToggleBtn" type="button">Help & FAQ</button>
@@ -650,24 +698,24 @@ select {
     <h2>FAQ</h2>
     <div class="faq-list">
       <div class="faq-item">
-        <div class="faq-q">How is Overlap match percentage calculated?</div>
-        <div class="faq-a">The percentage measures how closely the combined shape matches the suggested visible letter. A higher percentage indicates a stronger visual match.</div>
+        <div class="faq-q">How does the hidden word puzzle decoder work?</div>
+        <div class="faq-a">Enter two words letter by letter. The decoder overlaps each letter pair and calculates which visible letter emerges. A higher match percentage means the decoded letter is more confident. Perfect for solving overlapping word puzzles and viral challenges.</div>
       </div>
       <div class="faq-item">
-        <div class="faq-q">Do font and sizing affect results?</div>
-        <div class="faq-a">Yes. Different fonts and scaling can shift overlap shapes. This tool uses a consistent rendering baseline for reliable comparisons.</div>
+        <div class="faq-q">Do font and sizing affect overlap results?</div>
+        <div class="faq-a">Yes. Different fonts can shift the overlapping letter shapes. This decoder uses a consistent rendering baseline so your results are reliable across all puzzle types.</div>
       </div>
       <div class="faq-item">
-        <div class="faq-q">Is full mode a subscription?</div>
-        <div class="faq-a">No. Full mode is a single purchase for this decoder.</div>
+        <div class="faq-q">Is this a subscription?</div>
+        <div class="faq-a">No. Full mode is a one-time $4.99 purchase. No subscription, no recurring charges. Decode unlimited puzzles forever.</div>
       </div>
       <div class="faq-item">
-        <div class="faq-q">How do I recover access?</div>
-        <div class="faq-a">Use your purchase email to request an Email Sign-In Link on a new device or browser.</div>
+        <div class="faq-q">How do I recover access on a new device?</div>
+        <div class="faq-a">Use your purchase email to request an Email Sign-In Link. Your full mode access is restored instantly on any device or browser.</div>
       </div>
       <div class="faq-item">
-        <div class="faq-q">Is this affiliated with MrBeast?</div>
-        <div class="faq-a">No. This is an independent puzzle-solving utility.</div>
+        <div class="faq-q">Is this tool affiliated with MrBeast?</div>
+        <div class="faq-a">No. This is an independent puzzle-solving tool. It works with any overlapping letter puzzle, including MrBeast challenges, cipher clues, and viral word games.</div>
       </div>
     </div>
   </section>
@@ -675,18 +723,18 @@ select {
   <section class="card">
     <div class="intro-layout">
       <div>
-        <h2>Overview</h2>
-        <p class="desc">Use this decoder to test overlap-letter puzzle guesses and compare them against a clue image.</p>
-        <div class="example-chip">Overlap match % means how closely the combined shape matches the shown letter. Higher is better.</div>
-        <div class="example-chip">Quick example: the overlap of O and B usually reads as O.</div>
+        <h2>How It Works</h2>
+        <p class="desc">Stack two words on top of each other and instantly see which letters appear in the overlap. Compare your decoded result against a clue image to confirm the hidden answer.</p>
+        <div class="example-chip">Each letter pair gets a match score. The higher the percentage, the more confidently that letter is decoded.</div>
+        <div class="example-chip">See it in action: overlapping O and B reveals O because O's shape fits entirely inside B.</div>
         <div class="example-visual" id="quickExampleVisual" aria-label="Quick overlap example"></div>
       </div>
       <div>
         <h2>Flow</h2>
         <div class="step-map">
-          <a class="step-link" href="#buildSection"><span class="step-badge">1</span><span>Enter 2 words</span></a>
-          <a class="step-link" href="#buildSection"><span class="step-badge">2</span><span>Generate combined matches</span></a>
-          <a class="step-link" href="#compareSection"><span class="step-badge">3</span><span>Compare with clue image</span></a>
+          <a class="step-link" href="#buildSection"><span class="step-badge">1</span><span>Enter puzzle letters</span></a>
+          <a class="step-link" href="#buildSection"><span class="step-badge">2</span><span>Decode the overlap</span></a>
+          <a class="step-link" href="#compareSection"><span class="step-badge">3</span><span>Reveal the hidden word</span></a>
         </div>
       </div>
     </div>
@@ -779,11 +827,11 @@ select {
   </section>
 
   <section class="card" id="unlockSection">
-    <h2>Unlock Full Mode</h2>
+    <h2>Unlock Unlimited Decoding</h2>
     <div class="unlock-box" id="unlockBox">
-      <div class="unlock-title">Unlock for $4.99</div>
-      <div class="unlock-copy">No subscription. Full mode supports up to 14 letters per word and unlimited generation attempts.</div>
-      <div class="unlock-copy">Unlock is immediate after payment. Use Email Sign-In Link only when returning on a new device/browser.</div>
+      <div class="unlock-title">One-time $4.99 to decode unlimited puzzles</div>
+      <div class="unlock-copy">No subscription, no hidden fees. Unlock full mode with up to 14 letters per word and unlimited generation attempts, for less than a coffee.</div>
+      <div class="unlock-copy">Instant access after payment. Use Email Sign-In Link to restore access on a new device or browser.</div>
       <div class="paywall-form">
         <input type="text" id="paywallEmail" class="paywall-email" placeholder="you@example.com" autocomplete="username">
         <button class="primary-btn" id="paywallBuyBtn" type="button">Pay $4.99 & Unlock</button>
@@ -796,6 +844,15 @@ select {
       </div>
     </div>
   </section>
+
+  <footer class="coming-soon">
+    <h3>Coming Soon</h3>
+    <div class="coming-soon-tools">
+      <div class="coming-soon-item">XOR Letter Decoder</div>
+      <div class="coming-soon-item">Multi-Word Stacker</div>
+      <div class="coming-soon-item">Visual Diff Matcher</div>
+    </div>
+  </footer>
 
 </div>
 
@@ -1596,18 +1653,18 @@ async function initAccessState() {
   "mainEntity": [
     {
       "@type": "Question",
-      "name": "How is Overlap match percentage calculated?",
+      "name": "How does the hidden word puzzle decoder work?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "The percentage measures how closely the combined shape matches the suggested visible letter. A higher percentage indicates a stronger visual match."
+        "text": "Enter two words letter by letter. The decoder overlaps each letter pair and calculates which visible letter emerges. A higher match percentage means the decoded letter is more confident. Perfect for solving overlapping word puzzles and viral challenges."
       }
     },
     {
       "@type": "Question",
-      "name": "Is full mode a subscription?",
+      "name": "Is this a subscription?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "No. Full mode unlocks with a single $4.99 payment."
+        "text": "No. Full mode is a one-time $4.99 purchase. No subscription, no recurring charges. Decode unlimited puzzles forever."
       }
     },
     {
@@ -1615,7 +1672,7 @@ async function initAccessState() {
       "name": "Is this tool affiliated with MrBeast?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "No. This is an independent puzzle-solving utility."
+        "text": "No. This is an independent puzzle-solving tool. It works with any overlapping letter puzzle, including MrBeast challenges, cipher clues, and viral word games."
       }
     }
   ]
