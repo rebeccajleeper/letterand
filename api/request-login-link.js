@@ -72,28 +72,9 @@ export default async function handler(req, res) {
     const sentResult = await sendMagicEmail({ to: email, magicLink })
     if (sentResult.sent) return res.status(200).json({ sent: true })
 
-    // Temporary fallback while email provider/domain setup is incomplete.
-    return res.status(200).json({
-      sent: false,
-      fallback: true,
-      magicLink,
-      error: 'Email delivery is not configured yet.',
-    })
+    return res.status(500).json({ sent: false, error: 'Email delivery is not configured yet.' })
   } catch (err) {
     console.error('Magic link request error:', err.message)
-    // Preserve usability if provider rejects sending (e.g., unverified domain).
-    if (err.message && err.message.includes('Email send failed')) {
-      const expiresAt = Date.now() + (20 * 60 * 1000)
-      const token = signMagicToken(email, expiresAt, process.env.MAGIC_LINK_SECRET)
-      const baseUrl = getBaseUrl(req)
-      const magicLink = `${baseUrl}?magic_token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`
-      return res.status(200).json({
-        sent: false,
-        fallback: true,
-        magicLink,
-        error: 'Email provider blocked delivery. Use temporary sign-in link.',
-      })
-    }
     return res.status(500).json({ sent: false, error: 'Failed to create sign-in link' })
   }
 }

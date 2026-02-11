@@ -1381,8 +1381,6 @@ paywallMagicBtn.addEventListener('click', async function() {
     var data = await requestMagicLink(emailOrAdmin);
     if (data.sent) {
       setPaywallStatus('Sign-in link sent. Check your email.', false);
-    } else if (data.magicLink) {
-      setPaywallStatus('Email provider not configured. Use this temporary link: ' + data.magicLink, false);
     } else {
       setPaywallStatus(data.error || 'Could not send sign-in link.', true);
     }
