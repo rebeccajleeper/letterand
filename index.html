@@ -313,6 +313,13 @@ h2 {
 .slot-a:focus { border-color: var(--accent-red); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 0 0 3px rgba(255, 77, 106, 0.15); }
 .slot-b:focus { border-color: var(--accent-blue); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 0 0 3px rgba(240, 184, 64, 0.15); }
 
+.letter-slot.locked {
+  opacity: 0.25;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.02);
+  border-style: dashed;
+}
+
 .entry-actions {
   display: flex;
   align-items: center;
@@ -710,24 +717,6 @@ select {
       <button class="secondary-btn" id="copyWordABtn" type="button" disabled>Copy Word A</button>
       <button class="secondary-btn" id="copyWordBBtn" type="button" disabled>Copy Word B</button>
       <button class="secondary-btn" id="clearBtn" type="button">Clear</button>
-      <label class="control-label" for="lengthSelect" id="lengthLabel" style="display:none">Letters per word:
-        <select id="lengthSelect">
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-          <option value="5">5</option>
-          <option value="6">6</option>
-          <option value="7">7</option>
-          <option value="8">8</option>
-          <option value="9">9</option>
-          <option value="10">10</option>
-          <option value="11">11</option>
-          <option value="12">12</option>
-          <option value="13">13</option>
-          <option value="14">14</option>
-          <option value="15">15</option>
-        </select>
-      </label>
       <span class="inline-status" id="validityHint"></span>
       <span class="copy-status" id="copyStatus"></span>
     </div>
@@ -815,8 +804,6 @@ var copyWordABtn = document.getElementById('copyWordABtn');
 var copyWordBBtn = document.getElementById('copyWordBBtn');
 var clearBtn = document.getElementById('clearBtn');
 var copyStatus = document.getElementById('copyStatus');
-var lengthLabel = document.getElementById('lengthLabel');
-var lengthSelect = document.getElementById('lengthSelect');
 var unlockBox = document.getElementById('unlockBox');
 var paywallEmail = document.getElementById('paywallEmail');
 var paywallBuyBtn = document.getElementById('paywallBuyBtn');
@@ -933,20 +920,27 @@ function getSlots(group) {
 function slotWord(group) {
   var slots = getSlots(group);
   var s = '';
-  for (var i = 0; i < slots.length; i++) s += sanitizeLetter(slots[i].value);
+  for (var i = 0; i < slots.length; i++) {
+    if (slots[i].disabled) continue;
+    s += sanitizeLetter(slots[i].value);
+  }
   return s;
 }
 
-function buildSlot(group, idx) {
+function buildSlot(group, idx, locked) {
   var input = document.createElement('input');
   input.type = 'text';
   input.maxLength = 1;
   input.autocomplete = 'off';
   input.spellcheck = false;
   input.placeholder = '';
-  input.className = 'letter-slot ' + (group === 'a' ? 'slot-a' : 'slot-b');
+  input.className = 'letter-slot ' + (group === 'a' ? 'slot-a' : 'slot-b') + (locked ? ' locked' : '');
   input.setAttribute('data-group', group);
   input.setAttribute('data-index', String(idx));
+  if (locked) {
+    input.disabled = true;
+    input.tabIndex = -1;
+  }
 
   input.addEventListener('input', function() {
     input.value = sanitizeLetter(input.value);
@@ -975,9 +969,10 @@ function renderSlots(length) {
   while (slotsA.firstChild) slotsA.removeChild(slotsA.firstChild);
   while (slotsB.firstChild) slotsB.removeChild(slotsB.firstChild);
 
-  for (var i = 0; i < length; i++) {
-    slotsA.appendChild(buildSlot('a', i));
-    slotsB.appendChild(buildSlot('b', i));
+  for (var i = 0; i < 15; i++) {
+    var locked = i >= length;
+    slotsA.appendChild(buildSlot('a', i, locked));
+    slotsB.appendChild(buildSlot('b', i, locked));
   }
 
   clearResults();
@@ -988,27 +983,26 @@ function renderSlots(length) {
 
 function updateModeUI() {
   if (isUnlocked) {
-    modePill.textContent = 'Full Mode: up to 15 letters, unlimited generation';
+    modePill.textContent = 'Full Mode: 15 letters, unlimited generation';
     modePill.classList.add('ready');
-    lengthLabel.style.display = 'inline-flex';
     wordUnlocked.style.display = 'flex';
     wordEmail.textContent = isAdmin ? 'admin' : ((getStored() && getStored().email) || 'member');
     paywallBuyBtn.style.display = 'none';
     paywallMagicBtn.style.display = 'none';
     paywallEmail.style.display = 'none';
     unlockBox.style.borderStyle = 'solid';
+    currentLength = 15;
   } else {
     modePill.textContent = 'Preview Mode: 1 generate, 1 letter per word';
     modePill.classList.remove('ready');
-    lengthLabel.style.display = 'none';
     wordUnlocked.style.display = 'none';
     paywallBuyBtn.style.display = 'inline-block';
     paywallMagicBtn.style.display = 'inline-block';
     paywallEmail.style.display = 'inline-block';
     currentLength = 1;
-    lengthSelect.value = '1';
     unlockBox.style.borderStyle = 'dashed';
   }
+  renderSlots(currentLength);
 }
 
 function renderLetter(ch, fontSize) {
@@ -1417,12 +1411,6 @@ wordLogoutBtn.addEventListener('click', function() {
   setPaywallStatus('Signed out.', false);
 });
 
-lengthSelect.addEventListener('change', function() {
-  currentLength = parseInt(lengthSelect.value, 10);
-  renderSlots(currentLength);
-  setError('');
-});
-
 cropFileInput.addEventListener('change', function(e) {
   var file = e.target.files && e.target.files[0];
   if (!file) return;
@@ -1569,7 +1557,6 @@ async function initAccessState() {
 (async function boot() {
   await initAccessState();
   updateModeUI();
-  renderSlots(currentLength);
   syncValidity();
   renderQuickExample();
 })();
