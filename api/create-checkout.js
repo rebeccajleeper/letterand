@@ -13,6 +13,17 @@ export default async function handler(req, res) {
   }
 
   try {
+    const originHeader = req.headers.origin
+    const forwardedProto = req.headers['x-forwarded-proto']
+    const forwardedHost = req.headers['x-forwarded-host'] || req.headers.host
+    const baseUrl = originHeader && /^https?:\/\//.test(originHeader)
+      ? originHeader
+      : (forwardedHost ? `${forwardedProto || 'https'}://${forwardedHost}` : null)
+
+    if (!baseUrl) {
+      throw new Error('Cannot determine base URL for checkout redirects')
+    }
+
     // Enforce one-time purchase per email.
     const recentSessions = await stripe.checkout.sessions.list({ limit: 100 })
     const alreadyPaidSession = recentSessions.data.some((s) => (
@@ -42,8 +53,8 @@ export default async function handler(req, res) {
         },
         quantity: 1,
       }],
-      success_url: `${req.headers.origin}?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.origin}`,
+      success_url: `${baseUrl}?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}`,
     })
 
     return res.status(200).json({ url: session.url })
