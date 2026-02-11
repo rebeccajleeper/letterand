@@ -882,11 +882,6 @@ async function verifyCheckout(sessionId) {
   return res.json();
 }
 
-function isAdminIdentity(identifier) {
-  var v = (identifier || '').trim();
-  return v === 'adminloveswords12';
-}
-
 async function requestMagicLink(email) {
   var res = await fetch('/api/request-login-link', {
     method: 'POST',
@@ -1380,16 +1375,7 @@ paywallBuyBtn.addEventListener('click', async function() {
 paywallMagicBtn.addEventListener('click', async function() {
   var emailOrAdmin = (paywallEmail.value || '').trim();
   if (!emailOrAdmin) {
-    setPaywallStatus('Enter your purchase email (or admin credential).', true);
-    return;
-  }
-  if (isAdminIdentity(emailOrAdmin)) {
-    isUnlocked = true;
-    isAdmin = true;
-    setStored({ access: true, email: 'admin', admin: true });
-    updateModeUI();
-    syncValidity();
-    setPaywallStatus('Admin access granted.', false);
+    setPaywallStatus('Enter your purchase email.', true);
     return;
   }
 

@@ -913,11 +913,6 @@ async function checkAccess(email) {
   return res.json();
 }
 
-function isAdminIdentity(identifier) {
-  var v = (identifier || '').trim();
-  return v === 'adminloveswords12';
-}
-
 var cropLeft = 0;
 var cropTop = 0;
 var cropAspect = 1;
@@ -1395,18 +1390,7 @@ paywallBuyBtn.addEventListener('click', async function() {
 paywallSigninBtn.addEventListener('click', async function() {
   var emailOrAdmin = (paywallEmail.value || '').trim();
   if (!emailOrAdmin) {
-    setPaywallStatus('Enter your purchase email (or admin credential).', true);
-    return;
-  }
-  if (isAdminIdentity(emailOrAdmin)) {
-    isUnlocked = true;
-    localStorage.removeItem('previewGens_v2');
-    previewGenerations = 0;
-    isAdmin = true;
-    setStored({ access: true, email: 'admin', admin: true });
-    updateModeUI();
-    syncValidity();
-    setPaywallStatus('Admin access granted.', false);
+    setPaywallStatus('Enter your purchase email.', true);
     return;
   }
   paywallSigninBtn.disabled = true;
@@ -1435,18 +1419,7 @@ paywallSigninBtn.addEventListener('click', async function() {
 paywallRecoverBtn.addEventListener('click', async function() {
   var emailOrAdmin = (paywallEmail.value || '').trim();
   if (!emailOrAdmin) {
-    setPaywallStatus('Enter your email (or admin credential) to recover access.', true);
-    return;
-  }
-  if (isAdminIdentity(emailOrAdmin)) {
-    isUnlocked = true;
-    localStorage.removeItem('previewGens_v2');
-    previewGenerations = 0;
-    isAdmin = true;
-    setStored({ access: true, email: 'admin', admin: true });
-    updateModeUI();
-    syncValidity();
-    setPaywallStatus('Admin access granted.', false);
+    setPaywallStatus('Enter your email to recover access.', true);
     return;
   }
   paywallRecoverBtn.disabled = true;
