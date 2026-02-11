@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Overlay Decoder</title>
+<meta name="description" content="Word Overlay Decoder helps solve overlap-letter puzzles by combining two words, scoring letter matches, and comparing results against a clue image.">
+<meta name="keywords" content="word overlay decoder, letter overlap solver, puzzle decoder, cipher puzzle, clue image comparison, viral puzzle solver">
+<meta property="og:title" content="Word Overlay Decoder">
+<meta property="og:description" content="Solve overlap-letter puzzle clues with visual matching, clue tools, and word-level decoding.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg-deep: #0a0a1a;
+  --bg-card: #141432;
+  --bg-input: #1d1d44;
+  --border: #3a3a74;
+  --border-glow: #5f5fb2;
+  --text: #f6f7ff;
+  --text-muted: #c9cbe8;
+  --text-dim: #9a9dc9;
+  --accent-red: #ff4d6a;
+  --accent-blue: #7c7cff;
+  --accent-green: #3ddba0;
+  --accent-cyan: #44e0f0;
+  --radius: 14px;
+  --shadow-card: 0 2px 20px rgba(0, 0, 0, 0.3);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg-deep);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(99, 102, 241, 0.08), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(255, 77, 106, 0.05), transparent);
+  color: var(--text);
+  line-height: 1.55;
+  min-height: 100vh;
+}
+
+.app {
+  max-width: 1020px;
+  margin: 0 auto;
+  padding: 42px 20px 80px;
+}
+
+.app-header { text-align: center; margin-bottom: 20px; }
+.app-header h1 {
+  font-size: clamp(2rem, 6vw, 2.8rem);
+  font-weight: 800;
+  letter-spacing: -1px;
+  background: linear-gradient(135deg, var(--accent-red) 0%, var(--accent-blue) 50%, var(--accent-cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+.subtitle { color: var(--text-muted); }
+
+.card {
+  background: linear-gradient(135deg, var(--bg-card), rgba(30, 30, 66, 0.6));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 22px;
+  margin-bottom: 16px;
+}
+
+h2 {
+  font-size: 1.02rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0.4px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+.desc {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  margin-bottom: 14px;
+}
+
+.intro-layout {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 14px;
+}
+
+.step-map {
+  display: grid;
+  gap: 8px;
+}
+
+.step-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.step-link:hover {
+  border-color: var(--accent-cyan);
+  color: var(--text);
+}
+
+.step-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  flex-shrink: 0;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.mode-pill {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.mode-pill.ready {
+  border-color: rgba(61, 219, 160, 0.65);
+  color: var(--accent-green);
+}
+
+.explainer-steps { display: grid; gap: 10px; }
+.step {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 10px;
+}
+.step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+}
+.step p { color: var(--text-muted); font-size: 0.92rem; }
+.step strong { color: var(--text); }
+.step-main {
+  display: grid;
+  gap: 8px;
+}
+
+.step-visual {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.step-visual canvas {
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.step-visual .op {
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.example-chip {
+  margin-top: 10px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.example-visual {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.example-visual canvas {
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
+.example-visual .op {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.demo-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.demo-title {
+  font-size: 0.86rem;
+  color: var(--text);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.demo-canvas-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.demo-canvas-row canvas {
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.word-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.entry-guide {
+  margin-top: -2px;
+  margin-bottom: 12px;
+  font-size: 0.86rem;
+  color: var(--text-dim);
+}
+
+.word-row label {
+  width: 82px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+
+.letter-slots { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.letter-slot {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--bg-input);
+  text-align: center;
+  font-family: 'Arial Black', 'Arial Bold', sans-serif;
+  font-size: 1.75rem;
+  text-transform: uppercase;
+  outline: none;
+}
+
+.slot-a { color: var(--accent-red); }
+.slot-b { color: var(--accent-blue); }
+.slot-a:focus { border-color: var(--accent-red); }
+.slot-b:focus { border-color: var(--accent-blue); }
+
+.entry-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.primary-btn,
+.secondary-btn {
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.primary-btn {
+  border: 1px solid var(--border-glow);
+  color: #fff;
+  background: linear-gradient(135deg, rgba(255,77,106,0.18), rgba(124,124,255,0.18));
+}
+.primary-btn:hover { border-color: var(--accent-cyan); }
+.primary-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  border-color: var(--border);
+}
+
+.secondary-btn {
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.02);
+}
+.secondary-btn:hover { color: var(--text); border-color: var(--border-glow); }
+
+.control-label {
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+select {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 0.86rem;
+}
+
+.inline-status { font-size: 0.84rem; color: var(--text-dim); }
+.error-text { min-height: 18px; color: #ff8899; font-size: 0.85rem; margin-top: 4px; }
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.result-card {
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.result-card.match { border-color: rgba(61, 219, 160, 0.8); }
+.result-card.mismatch { border-color: rgba(255, 77, 106, 0.7); }
+
+.result-head { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 6px; }
+.result-head .hl-a { color: var(--accent-red); font-weight: 700; }
+.result-head .hl-b { color: var(--accent-blue); font-weight: 700; }
+
+.card-canvases {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.card-canvases canvas {
+  width: 62px;
+  height: 62px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
+.result-meta { text-align: center; font-size: 0.9rem; }
+.best-letter { color: var(--accent-green); font-size: 1rem; font-weight: 700; }
+.score-text { color: var(--text-muted); font-size: 0.78rem; }
+.score-note {
+  margin-top: 4px;
+  font-size: 0.76rem;
+  color: var(--text-dim);
+}
+
+.summary {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86rem;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.summary-row { margin-bottom: 4px; }
+.summary .label { color: var(--text-muted); }
+.summary .val-a { color: var(--accent-red); font-weight: 700; letter-spacing: 1px; }
+.summary .val-b { color: var(--accent-blue); font-weight: 700; letter-spacing: 1px; }
+.summary .val-r { color: var(--accent-green); font-weight: 700; letter-spacing: 1px; }
+
+.upload-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.upload-row input[type="file"] { font-size: 0.86rem; color: var(--text-muted); }
+
+.upload-controls {
+  margin-bottom: 10px;
+  color: var(--text-dim);
+  font-size: 0.84rem;
+}
+
+.compare-section {
+  margin-top: 8px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.compare-title { font-size: 0.86rem; color: var(--text-muted); margin-bottom: 8px; }
+.compare-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.row-label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  width: 118px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+#cropWrap { position: relative; overflow: visible; cursor: grab; min-height: 40px; }
+#cropCanvas { border-radius: 4px; position: relative; left: 0; }
+#resizeHandle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--accent-cyan);
+  border: 1px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.4);
+  cursor: nwse-resize;
+  display: none;
+}
+#mergedRow { display: flex; gap: 2px; flex-wrap: wrap; }
+#mergedRow canvas { width: 56px; height: 56px; border-radius: 4px; background: #fff; }
+
+.compare-status { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 8px; }
+
+.unlock-box {
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px dashed var(--border-glow);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.unlock-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.unlock-copy {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.paywall-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.paywall-email {
+  min-width: 220px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 9px 10px;
+  font-size: 0.9rem;
+}
+
+.paywall-status {
+  margin-top: 8px;
+  font-size: 0.84rem;
+  color: var(--text-dim);
+  min-height: 18px;
+}
+
+.paywall-status.error { color: #ff9cab; }
+
+.unlocked-bar {
+  margin-top: 8px;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+}
+
+.admin-wrap {
+  margin-top: 10px;
+}
+
+.admin-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.admin-input {
+  min-width: 180px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 9px 10px;
+  font-size: 0.9rem;
+}
+
+.copy-status {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.substep-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 8px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.faq-list {
+  display: grid;
+  gap: 8px;
+}
+
+.faq-item {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.help-toggle-row {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0 14px;
+}
+
+.help-panel {
+  display: none;
+}
+
+.help-panel.open {
+  display: block;
+}
+
+.faq-q {
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.faq-a {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .intro-layout {
+    grid-template-columns: 1fr;
+  }
+  .app { padding: 30px 14px 60px; }
+  .card { padding: 16px; }
+  .word-row label { width: 100%; }
+  .row-label { width: 84px; text-align: left; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="app-header">
+    <h1>Word Overlay Decoder</h1>
+    <p class="subtitle">Decode the visible letters created by overlapping two words</p>
+  </header>
+  <div class="help-toggle-row">
+    <button class="secondary-btn" id="helpToggleBtn" type="button">Help & FAQ</button>
+  </div>
+  <section class="card help-panel" id="helpPanel">
+    <h2>FAQ</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">How is Overlap match percentage calculated?</div>
+        <div class="faq-a">The percentage measures how closely the combined shape matches the suggested visible letter. A higher percentage indicates a stronger visual match.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Do font and sizing affect results?</div>
+        <div class="faq-a">Yes. Different fonts and scaling can shift overlap shapes. This tool uses a consistent rendering baseline for reliable comparisons.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Is full mode a subscription?</div>
+        <div class="faq-a">No. Full mode is a one-time purchase for this decoder.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">How do I recover access?</div>
+        <div class="faq-a">Use the same purchase email in Sign In or Recover Account. Access is restored after verification.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Is this affiliated with MrBeast?</div>
+        <div class="faq-a">No. This is an independent puzzle-solving utility.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="intro-layout">
+      <div>
+        <h2>Overview</h2>
+        <p class="desc">Use this decoder to test overlap-letter puzzle guesses and compare them against a clue image.</p>
+        <div class="example-chip">Overlap match % means how closely the combined shape matches the shown letter. Higher is better.</div>
+        <div class="example-chip">Quick example: the overlap of O and B usually reads as O.</div>
+        <div class="example-visual" id="quickExampleVisual" aria-label="Quick overlap example"></div>
+      </div>
+      <div>
+        <h2>Flow</h2>
+        <div class="step-map">
+          <a class="step-link" href="#buildSection"><span class="step-badge">1</span><span>Enter 2 words</span></a>
+          <a class="step-link" href="#buildSection"><span class="step-badge">2</span><span>Generate combined matches</span></a>
+          <a class="step-link" href="#compareSection"><span class="step-badge">3</span><span>Compare with clue image</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="buildSection">
+    <div class="section-row">
+      <h2 class="section-title"><span class="step-badge">1</span>Enter 2 Words</h2>
+      <span class="mode-pill" id="modePill">Preview Mode: 1 generate, 2 letters per word</span>
+    </div>
+    <p class="desc">Start in preview mode. You can generate once here, then continue with full mode after unlock.</p>
+
+    <div class="word-row">
+      <label>Word A</label>
+      <div class="letter-slots" id="slotsA"></div>
+    </div>
+
+    <div class="word-row">
+      <label>Word B</label>
+      <div class="letter-slots" id="slotsB"></div>
+    </div>
+    <div class="entry-guide">Slots start empty by design. Enter a letter in every slot above, then click Generate Combined Matches.</div>
+
+    <div class="substep-title"><span class="step-badge">2</span><span>Generate Combined Matches</span></div>
+
+    <div class="entry-actions">
+      <button class="primary-btn" id="generateBtn">Generate Combined Matches</button>
+      <button class="secondary-btn" id="copyWordABtn" type="button" disabled>Copy Word A</button>
+      <button class="secondary-btn" id="copyWordBBtn" type="button" disabled>Copy Word B</button>
+      <button class="secondary-btn" id="clearBtn" type="button">Clear</button>
+      <label class="control-label" for="lengthSelect" id="lengthLabel" style="display:none">Letters per word:
+        <select id="lengthSelect">
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+          <option value="11">11</option>
+          <option value="12">12</option>
+          <option value="13">13</option>
+          <option value="14">14</option>
+          <option value="15">15</option>
+        </select>
+      </label>
+      <span class="inline-status" id="validityHint"></span>
+      <span class="copy-status" id="copyStatus"></span>
+    </div>
+
+    <div class="error-text" id="entryError"></div>
+
+    <div class="result-grid" id="resultGrid"></div>
+    <div class="summary" id="summary"></div>
+    <div class="entry-actions" id="buildUnlockHint">
+      <a href="#unlockSection" class="primary-btn" style="text-decoration:none">Unlock Full Mode</a>
+    </div>
+  </section>
+
+  <section class="card" id="compareSection">
+    <h2 class="section-title"><span class="step-badge">3</span>Compare With Clue Image</h2>
+    <p class="desc">Upload one clue image showing the combined result. Compare and align it with your generated overlay strip.</p>
+    <div class="compare-status" id="compareStatus">Generate at least once in Step 1 (Build), then compare here.</div>
+
+    <div class="upload-row">
+      <label class="control-label" for="cropFileInput">Clue Overlay Image:</label>
+      <input type="file" id="cropFileInput" accept="image/*">
+    </div>
+    <div class="upload-controls" id="clueEditor">
+      <span>Manipulate clue image directly: drag image to align, drag corner handle to resize.</span>
+    </div>
+
+    <div class="compare-section">
+      <div class="compare-title">Visual Alignment <span style="font-size:0.76rem;color:var(--text-dim)">(drag clue image horizontally to align)</span></div>
+      <div class="compare-row">
+        <span class="row-label">Clue image:</span>
+        <div id="cropWrap">
+          <canvas id="cropCanvas" width="1" height="1"></canvas>
+          <div id="resizeHandle" aria-label="Resize clue image handle"></div>
+        </div>
+      </div>
+      <div class="compare-row">
+        <span class="row-label">Generated overlay:</span>
+        <div id="mergedRow"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="unlockSection">
+    <h2>Unlock Full Mode</h2>
+    <div class="unlock-box" id="unlockBox">
+      <div class="unlock-title">One-Time $4.99</div>
+      <div class="unlock-copy">No subscription. Full mode supports up to 15 letters per word and unlimited generation attempts.</div>
+      <div class="unlock-copy">Privacy-first option: only an email is used for purchase verification and account recovery.</div>
+      <div class="paywall-form">
+        <input type="text" id="paywallEmail" class="paywall-email" placeholder="you@example.com" autocomplete="username">
+        <button class="primary-btn" id="paywallBuyBtn" type="button">Pay One-Time & Unlock</button>
+        <button class="secondary-btn" id="paywallSigninBtn" type="button">Sign In (Purchased)</button>
+        <button class="secondary-btn" id="paywallRecoverBtn" type="button">Recover Account</button>
+      </div>
+      <div class="paywall-status" id="paywallStatus"></div>
+      <div class="unlocked-bar" id="wordUnlocked">
+        <span>Signed in as <strong id="wordEmail"></strong></span>
+        <button class="secondary-btn" id="wordLogoutBtn" type="button">Sign Out</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+var CELL = 200;
+var ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+var RENDER_FONT_SIZE = 120; // kept as background engine setting
+var STORAGE_KEY = 'letterand_access';
+
+var isUnlocked = false;
+var isAdmin = false;
+var previewGenerations = 0;
+var currentLength = 2;
+var cropImage = null;
+var clueDisplayHeight = 72;
+var lastVisibleWord = '';
+var lastState = null;
+
+var slotsA = document.getElementById('slotsA');
+var slotsB = document.getElementById('slotsB');
+var modePill = document.getElementById('modePill');
+var generateBtn = document.getElementById('generateBtn');
+var copyWordABtn = document.getElementById('copyWordABtn');
+var copyWordBBtn = document.getElementById('copyWordBBtn');
+var clearBtn = document.getElementById('clearBtn');
+var copyStatus = document.getElementById('copyStatus');
+var lengthLabel = document.getElementById('lengthLabel');
+var lengthSelect = document.getElementById('lengthSelect');
+var unlockBox = document.getElementById('unlockBox');
+var paywallEmail = document.getElementById('paywallEmail');
+var paywallBuyBtn = document.getElementById('paywallBuyBtn');
+var paywallSigninBtn = document.getElementById('paywallSigninBtn');
+var paywallRecoverBtn = document.getElementById('paywallRecoverBtn');
+var paywallStatus = document.getElementById('paywallStatus');
+var wordUnlocked = document.getElementById('wordUnlocked');
+var wordEmail = document.getElementById('wordEmail');
+var wordLogoutBtn = document.getElementById('wordLogoutBtn');
+var cropCanvas = document.getElementById('cropCanvas');
+var cropWrap = document.getElementById('cropWrap');
+var resizeHandle = document.getElementById('resizeHandle');
+var cropFileInput = document.getElementById('cropFileInput');
+var clueEditor = document.getElementById('clueEditor');
+var resultGrid = document.getElementById('resultGrid');
+var summaryDiv = document.getElementById('summary');
+var mergedRow = document.getElementById('mergedRow');
+var entryError = document.getElementById('entryError');
+var validityHint = document.getElementById('validityHint');
+var compareStatus = document.getElementById('compareStatus');
+var quickExampleVisual = document.getElementById('quickExampleVisual');
+var helpToggleBtn = document.getElementById('helpToggleBtn');
+var helpPanel = document.getElementById('helpPanel');
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function getStored() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function setStored(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function clearStored() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
+function setPaywallStatus(msg, isError) {
+  paywallStatus.textContent = msg || '';
+  paywallStatus.className = 'paywall-status' + (isError ? ' error' : '');
+}
+
+async function startCheckout(email) {
+  var res = await fetch('/api/create-checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email }),
+  });
+  var data = await res.json();
+  if (data.url) window.location.href = data.url;
+  if (data.alreadyPurchased) {
+    var err = new Error(data.error || 'Already purchased');
+    err.code = 'ALREADY_PURCHASED';
+    throw err;
+  }
+  if (!data.url) {
+    throw new Error(data.error || 'Checkout failed');
+  }
+  return data;
+}
+
+async function verifyCheckout(sessionId) {
+  var res = await fetch('/api/verify-payment', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId }),
+  });
+  return res.json();
+}
+
+async function checkAccess(email) {
+  var res = await fetch('/api/check-access', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email }),
+  });
+  return res.json();
+}
+
+function isAdminIdentity(identifier) {
+  var v = (identifier || '').trim();
+  return v === 'admin' || v === 'Goldfish12!';
+}
+
+var cropLeft = 0;
+var cropTop = 0;
+var cropAspect = 1;
+
+function sanitizeLetter(value) {
+  var m = (value || '').toUpperCase().match(/[A-Z]/);
+  return m ? m[0] : '';
+}
+
+function getSlots(group) {
+  return Array.prototype.slice.call(document.querySelectorAll('.letter-slot[data-group="' + group + '"]'));
+}
+
+function slotWord(group) {
+  var slots = getSlots(group);
+  var s = '';
+  for (var i = 0; i < slots.length; i++) s += sanitizeLetter(slots[i].value);
+  return s;
+}
+
+function buildSlot(group, idx) {
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.maxLength = 1;
+  input.autocomplete = 'off';
+  input.spellcheck = false;
+  input.placeholder = '';
+  input.className = 'letter-slot ' + (group === 'a' ? 'slot-a' : 'slot-b');
+  input.setAttribute('data-group', group);
+  input.setAttribute('data-index', String(idx));
+
+  input.addEventListener('input', function() {
+    input.value = sanitizeLetter(input.value);
+
+    if (input.value) {
+      var idxNum = parseInt(input.getAttribute('data-index'), 10);
+      var sameGroupSlots = getSlots(group);
+      if (idxNum < sameGroupSlots.length - 1) sameGroupSlots[idxNum + 1].focus();
+    }
+
+    syncValidity();
+  });
+
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Backspace' && !input.value) {
+      var idxNum = parseInt(input.getAttribute('data-index'), 10);
+      var sameGroupSlots = getSlots(group);
+      if (idxNum > 0) sameGroupSlots[idxNum - 1].focus();
+    }
+  });
+
+  return input;
+}
+
+function renderSlots(length) {
+  while (slotsA.firstChild) slotsA.removeChild(slotsA.firstChild);
+  while (slotsB.firstChild) slotsB.removeChild(slotsB.firstChild);
+
+  for (var i = 0; i < length; i++) {
+    slotsA.appendChild(buildSlot('a', i));
+    slotsB.appendChild(buildSlot('b', i));
+  }
+
+  clearResults();
+  syncValidity();
+  var firstA = getSlots('a')[0];
+  if (firstA) firstA.focus();
+}
+
+function updateModeUI() {
+  if (isUnlocked) {
+    modePill.textContent = 'Full Mode: up to 15 letters, unlimited generation';
+    modePill.classList.add('ready');
+    lengthLabel.style.display = 'inline-flex';
+    wordUnlocked.style.display = 'flex';
+    wordEmail.textContent = isAdmin ? 'admin' : ((getStored() && getStored().email) || 'member');
+    paywallBuyBtn.style.display = 'none';
+    paywallSigninBtn.style.display = 'none';
+    paywallRecoverBtn.style.display = 'none';
+    paywallEmail.style.display = 'none';
+    unlockBox.style.borderStyle = 'solid';
+  } else {
+    modePill.textContent = 'Preview Mode: 1 generate, 2 letters per word';
+    modePill.classList.remove('ready');
+    lengthLabel.style.display = 'none';
+    wordUnlocked.style.display = 'none';
+    paywallBuyBtn.style.display = 'inline-block';
+    paywallSigninBtn.style.display = 'inline-block';
+    paywallRecoverBtn.style.display = 'inline-block';
+    paywallEmail.style.display = 'inline-block';
+    currentLength = 2;
+    lengthSelect.value = '2';
+    unlockBox.style.borderStyle = 'dashed';
+  }
+}
+
+function renderLetter(ch, fontSize) {
+  var c = document.createElement('canvas');
+  c.width = CELL;
+  c.height = CELL;
+  var ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, CELL, CELL);
+  ctx.fillStyle = '#000';
+  var scaledFont = Math.round(fontSize * (CELL / 80));
+  ctx.font = scaledFont + 'px "Arial Black", "Arial Bold", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(ch.toUpperCase(), CELL / 2, CELL / 2 + Math.round(CELL * 0.02));
+  return ctx.getImageData(0, 0, CELL, CELL);
+}
+
+function toBinary(imageData) {
+  var d = imageData.data;
+  var mask = new Uint8Array(CELL * CELL);
+  for (var i = 0; i < mask.length; i++) {
+    var brightness = (d[i * 4] + d[i * 4 + 1] + d[i * 4 + 2]) / 3;
+    mask[i] = brightness < 128 ? 1 : 0;
+  }
+  return mask;
+}
+
+function andMasks(a, b) {
+  var result = new Uint8Array(a.length);
+  for (var i = 0; i < a.length; i++) result[i] = a[i] & b[i];
+  return result;
+}
+
+function matchScore(candidate, target) {
+  var inter = 0;
+  var cSum = 0;
+  var tSum = 0;
+  for (var i = 0; i < candidate.length; i++) {
+    if (candidate[i]) cSum++;
+    if (target[i]) tSum++;
+    if (candidate[i] && target[i]) inter++;
+  }
+  if (cSum === 0 && tSum === 0) return 1;
+  if (cSum === 0 || tSum === 0) return 0;
+  var union = cSum + tSum - inter;
+  var iouVal = inter / union;
+  var prec = inter / cSum;
+  var rec = inter / tSum;
+  var f1Val = (prec + rec) > 0 ? 2 * prec * rec / (prec + rec) : 0;
+  return 0.4 * iouVal + 0.6 * f1Val;
+}
+
+function drawMask(canvas, mask, r, g, b) {
+  var ctx = canvas.getContext('2d');
+  var img = ctx.createImageData(CELL, CELL);
+  for (var i = 0; i < mask.length; i++) {
+    img.data[i * 4] = mask[i] ? r : 255;
+    img.data[i * 4 + 1] = mask[i] ? g : 255;
+    img.data[i * 4 + 2] = mask[i] ? b : 255;
+    img.data[i * 4 + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function buildLetterMasks(fontSize) {
+  var masks = {};
+  for (var j = 0; j < ALPHABET.length; j++) {
+    var ch = ALPHABET[j];
+    masks[ch] = toBinary(renderLetter(ch, fontSize));
+  }
+  return masks;
+}
+
+function findBestMatch(mask, letterMasks) {
+  var best = { ch: 'A', score: -1 };
+  for (var j = 0; j < ALPHABET.length; j++) {
+    var ch = ALPHABET[j];
+    var score = matchScore(letterMasks[ch], mask);
+    if (score > best.score) best = { ch: ch, score: score };
+  }
+  return best;
+}
+
+function clearElement(el) {
+  while (el.firstChild) el.removeChild(el.firstChild);
+}
+
+function clearResults() {
+  clearElement(resultGrid);
+  clearElement(summaryDiv);
+  clearElement(mergedRow);
+  compareStatus.textContent = 'Generate at least once in Step 1 (Build), then compare here.';
+  copyWordABtn.disabled = true;
+  copyWordBBtn.disabled = true;
+  lastVisibleWord = '';
+  copyStatus.textContent = '';
+  lastState = null;
+}
+
+function drawCrop() {
+  if (!cropImage) {
+    cropCanvas.width = 1;
+    cropCanvas.height = 1;
+    resizeHandle.style.display = 'none';
+    return;
+  }
+  var h = clueDisplayHeight;
+  var w = Math.max(1, Math.round(cropImage.width * (h / cropImage.height)));
+  cropAspect = w / h;
+  cropCanvas.width = w;
+  cropCanvas.height = h;
+  cropCanvas.style.width = w + 'px';
+  cropCanvas.style.height = h + 'px';
+  cropCanvas.style.left = cropLeft + 'px';
+  cropCanvas.style.top = cropTop + 'px';
+  var ctx = cropCanvas.getContext('2d');
+  ctx.clearRect(0, 0, w, h);
+  ctx.drawImage(cropImage, 0, 0, w, h);
+
+  resizeHandle.style.display = 'block';
+  positionResizeHandle();
+}
+
+function positionResizeHandle() {
+  if (!cropImage) return;
+  var w = parseInt(cropCanvas.style.width || '0', 10);
+  var h = parseInt(cropCanvas.style.height || '0', 10);
+  resizeHandle.style.left = (cropLeft + w - 7) + 'px';
+  resizeHandle.style.top = (cropTop + h - 7) + 'px';
+}
+
+function renderQuickExample() {
+  clearElement(quickExampleVisual);
+  var masks = buildLetterMasks(RENDER_FONT_SIZE);
+  var maskA = masks.O;
+  var maskB = masks.B;
+  var maskAnd = andMasks(maskA, maskB);
+  var best = findBestMatch(maskAnd, masks);
+
+  function addCanvas(mask, r, g, b) {
+    var cv = document.createElement('canvas');
+    cv.width = CELL;
+    cv.height = CELL;
+    drawMask(cv, mask, r, g, b);
+    quickExampleVisual.appendChild(cv);
+  }
+
+  function addOp(text) {
+    var op = document.createElement('span');
+    op.className = 'op';
+    op.textContent = text;
+    quickExampleVisual.appendChild(op);
+  }
+
+  addCanvas(maskA, 233, 69, 96);
+  addOp('+');
+  addCanvas(maskB, 67, 97, 238);
+  addOp('=');
+  addCanvas(maskAnd, 34, 34, 34);
+  addOp('looks like ' + best.ch);
+}
+
+
+function addSummaryLine(label, value, cls) {
+  var row = document.createElement('div');
+  row.className = 'summary-row';
+
+  var left = document.createElement('span');
+  left.className = 'label';
+  left.textContent = label;
+
+  var right = document.createElement('span');
+  right.className = cls;
+  right.textContent = value;
+
+  row.appendChild(left);
+  row.appendChild(right);
+  summaryDiv.appendChild(row);
+}
+
+function setError(msg) {
+  entryError.textContent = msg || '';
+}
+
+function validateSlots() {
+  var wordA = slotWord('a');
+  var wordB = slotWord('b');
+
+  if (!isUnlocked && previewGenerations >= 1) {
+    return { ok: false, message: 'Preview generate used. Unlock full mode for more generations.' };
+  }
+
+  if (wordA.length !== currentLength || wordB.length !== currentLength) {
+    return { ok: false, message: 'Enter ' + currentLength + ' letters for each word.' };
+  }
+
+  return { ok: true, message: 'Ready to generate.' };
+}
+
+function syncValidity() {
+  var v = validateSlots();
+  generateBtn.disabled = !v.ok;
+  validityHint.textContent = v.message;
+  validityHint.style.color = v.ok ? 'var(--accent-green)' : 'var(--text-dim)';
+}
+
+function generate() {
+  var validation = validateSlots();
+  if (!validation.ok) {
+    setError(validation.message);
+    return;
+  }
+
+  var wordA = slotWord('a');
+  var wordB = slotWord('b');
+
+  setError('');
+  clearElement(resultGrid);
+  clearElement(summaryDiv);
+  clearElement(mergedRow);
+
+  var letterMasks = buildLetterMasks(RENDER_FONT_SIZE);
+  var visibleWord = [];
+  var andMaskList = [];
+
+  for (var i = 0; i < currentLength; i++) {
+    var chA = wordA[i];
+    var chB = wordB[i];
+    var maskA = letterMasks[chA];
+    var maskB = letterMasks[chB];
+    var maskAND = andMasks(maskA, maskB);
+    andMaskList.push(maskAND);
+
+    var best = findBestMatch(maskAND, letterMasks);
+    visibleWord.push(best.ch);
+
+    var card = document.createElement('div');
+    card.className = 'result-card ' + (best.score > 0.7 ? 'match' : 'mismatch');
+
+    var head = document.createElement('div');
+    head.className = 'result-head';
+    head.innerHTML = 'Letter slot ' + (i + 1) + ' (left to right): <span class="hl-a">' + chA + '</span> + <span class="hl-b">' + chB + '</span>';
+    card.appendChild(head);
+
+    var cRow = document.createElement('div');
+    cRow.className = 'card-canvases';
+
+    var cvA = document.createElement('canvas');
+    cvA.width = CELL;
+    cvA.height = CELL;
+    drawMask(cvA, maskA, 233, 69, 96);
+    cRow.appendChild(cvA);
+
+    var cvB = document.createElement('canvas');
+    cvB.width = CELL;
+    cvB.height = CELL;
+    drawMask(cvB, maskB, 67, 97, 238);
+    cRow.appendChild(cvB);
+
+    var cvAnd = document.createElement('canvas');
+    cvAnd.width = CELL;
+    cvAnd.height = CELL;
+    drawMask(cvAnd, maskAND, 34, 34, 34);
+    cRow.appendChild(cvAnd);
+
+    card.appendChild(cRow);
+
+    var meta = document.createElement('div');
+    meta.className = 'result-meta';
+    var overlapPct = (best.score * 100).toFixed(1);
+    meta.innerHTML = '= <span class="best-letter">' + best.ch + '</span> <span class="score-text">Overlap match: ' + overlapPct + '%</span>';
+    card.appendChild(meta);
+
+    resultGrid.appendChild(card);
+  }
+
+  for (var m = 0; m < andMaskList.length; m++) {
+    var mini = document.createElement('canvas');
+    mini.width = CELL;
+    mini.height = CELL;
+    drawMask(mini, andMaskList[m], 34, 34, 34);
+    mergedRow.appendChild(mini);
+  }
+
+  addSummaryLine('Word A:  ', wordA, 'val-a');
+  addSummaryLine('Word B:  ', wordB, 'val-b');
+  lastVisibleWord = visibleWord.join('');
+  copyWordABtn.disabled = !wordA;
+  copyWordBBtn.disabled = !wordB;
+
+  compareStatus.textContent = 'Generated overlay ready. Upload a clue image and align it to compare.';
+
+  if (!isUnlocked) {
+    previewGenerations += 1;
+    if (previewGenerations >= 1) {
+      setError('Preview complete. Unlock full mode for additional generations.');
+    }
+  }
+
+  lastState = {
+    wordA: wordA,
+    wordB: wordB,
+    length: currentLength
+  };
+
+  syncValidity();
+}
+
+generateBtn.addEventListener('click', generate);
+
+copyWordABtn.addEventListener('click', async function() {
+  var wordA = slotWord('a');
+  if (!wordA) return;
+  try {
+    await navigator.clipboard.writeText(wordA);
+    copyStatus.textContent = 'Copied Word A: ' + wordA;
+  } catch (_) {
+    copyStatus.textContent = 'Copy Word A failed. Please copy manually.';
+  }
+});
+
+copyWordBBtn.addEventListener('click', async function() {
+  var wordB = slotWord('b');
+  if (!wordB) return;
+  try {
+    await navigator.clipboard.writeText(wordB);
+    copyStatus.textContent = 'Copied Word B: ' + wordB;
+  } catch (_) {
+    copyStatus.textContent = 'Copy Word B failed. Please copy manually.';
+  }
+});
+
+clearBtn.addEventListener('click', function() {
+  renderSlots(currentLength);
+  setError('');
+  syncValidity();
+});
+
+paywallBuyBtn.addEventListener('click', async function() {
+  var email = (paywallEmail.value || '').trim();
+  if (!email || email.indexOf('@') === -1) {
+    setPaywallStatus('Enter a valid email for one-time checkout.', true);
+    return;
+  }
+  paywallBuyBtn.disabled = true;
+  paywallBuyBtn.textContent = 'Redirecting...';
+  setPaywallStatus('', false);
+  try {
+    await startCheckout(email);
+  } catch (err) {
+    if (err && err.code === 'ALREADY_PURCHASED') {
+      setPaywallStatus('This email already has access. Use Sign In (Purchased) or Recover Account.', false);
+    } else {
+      setPaywallStatus('Could not start checkout. Try again.', true);
+    }
+    paywallBuyBtn.disabled = false;
+    paywallBuyBtn.textContent = 'Pay One-Time & Unlock';
+  }
+});
+
+paywallSigninBtn.addEventListener('click', async function() {
+  var emailOrAdmin = (paywallEmail.value || '').trim();
+  if (!emailOrAdmin) {
+    setPaywallStatus('Enter your purchase email (or admin credential).', true);
+    return;
+  }
+  if (isAdminIdentity(emailOrAdmin)) {
+    isUnlocked = true;
+    isAdmin = true;
+    setStored({ access: true, email: 'admin', admin: true });
+    updateModeUI();
+    syncValidity();
+    setPaywallStatus('Admin access granted.', false);
+    return;
+  }
+  paywallSigninBtn.disabled = true;
+  paywallSigninBtn.textContent = 'Checking...';
+  try {
+    var data = await checkAccess(emailOrAdmin);
+    if (data.access) {
+      isUnlocked = true;
+      isAdmin = false;
+      setStored({ access: true, email: emailOrAdmin, admin: false });
+      updateModeUI();
+      syncValidity();
+      setPaywallStatus('Access restored.', false);
+    } else {
+      setPaywallStatus('No paid access found for this email.', true);
+    }
+  } catch (_) {
+    setPaywallStatus('Could not verify access right now.', true);
+  }
+  paywallSigninBtn.disabled = false;
+  paywallSigninBtn.textContent = 'Sign In (Purchased)';
+});
+
+paywallRecoverBtn.addEventListener('click', async function() {
+  var emailOrAdmin = (paywallEmail.value || '').trim();
+  if (!emailOrAdmin) {
+    setPaywallStatus('Enter your email (or admin credential) to recover access.', true);
+    return;
+  }
+  if (isAdminIdentity(emailOrAdmin)) {
+    isUnlocked = true;
+    isAdmin = true;
+    setStored({ access: true, email: 'admin', admin: true });
+    updateModeUI();
+    syncValidity();
+    setPaywallStatus('Admin access granted.', false);
+    return;
+  }
+  paywallRecoverBtn.disabled = true;
+  paywallRecoverBtn.textContent = 'Recovering...';
+  try {
+    var data = await checkAccess(emailOrAdmin);
+    if (data.access) {
+      isUnlocked = true;
+      isAdmin = false;
+      setStored({ access: true, email: emailOrAdmin, admin: false });
+      updateModeUI();
+      syncValidity();
+      setPaywallStatus('Recovery complete. Access restored.', false);
+    } else {
+      setPaywallStatus('No purchase found for that email.', true);
+    }
+  } catch (_) {
+    setPaywallStatus('Recovery failed. Please retry.', true);
+  }
+  paywallRecoverBtn.disabled = false;
+  paywallRecoverBtn.textContent = 'Recover Account';
+});
+
+wordLogoutBtn.addEventListener('click', function() {
+  isUnlocked = false;
+  isAdmin = false;
+  previewGenerations = 0;
+  clearStored();
+  updateModeUI();
+  syncValidity();
+  setPaywallStatus('Signed out.', false);
+});
+
+lengthSelect.addEventListener('change', function() {
+  currentLength = parseInt(lengthSelect.value, 10);
+  renderSlots(currentLength);
+  setError('');
+});
+
+cropFileInput.addEventListener('change', function(e) {
+  var file = e.target.files && e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var img = new Image();
+    img.onload = function() {
+      cropImage = img;
+      clueDisplayHeight = 72;
+      cropLeft = 0;
+      cropTop = 0;
+      drawCrop();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+helpToggleBtn.addEventListener('click', function() {
+  var isOpen = helpPanel.classList.toggle('open');
+  helpToggleBtn.textContent = isOpen ? 'Hide Help & FAQ' : 'Help & FAQ';
+});
+
+(function setupCropDrag() {
+  var dragging = false;
+  var resizing = false;
+  var startX = 0;
+  var startY = 0;
+  var startLeft = 0;
+  var startTop = 0;
+  var startHeight = 0;
+
+  cropWrap.addEventListener('mousedown', function(e) {
+    if (!cropImage) return;
+    if (e.target === resizeHandle) return;
+    dragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    startLeft = cropLeft;
+    startTop = cropTop;
+    cropWrap.style.cursor = 'grabbing';
+    e.preventDefault();
+  });
+
+  resizeHandle.addEventListener('mousedown', function(e) {
+    if (!cropImage) return;
+    resizing = true;
+    startY = e.clientY;
+    startHeight = clueDisplayHeight;
+    e.preventDefault();
+    e.stopPropagation();
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (dragging) {
+      cropLeft = startLeft + (e.clientX - startX);
+      cropTop = startTop + (e.clientY - startY);
+      cropCanvas.style.left = cropLeft + 'px';
+      cropCanvas.style.top = cropTop + 'px';
+      positionResizeHandle();
+      return;
+    }
+    if (resizing) {
+      clueDisplayHeight = clamp(startHeight + (e.clientY - startY), 36, 260);
+      var w = Math.max(1, Math.round(clueDisplayHeight * cropAspect));
+      cropCanvas.style.width = w + 'px';
+      cropCanvas.style.height = clueDisplayHeight + 'px';
+      positionResizeHandle();
+    }
+  });
+
+  document.addEventListener('mouseup', function() {
+    dragging = false;
+    resizing = false;
+    cropWrap.style.cursor = 'grab';
+  });
+})();
+
+async function initAccessState() {
+  var params = new URLSearchParams(window.location.search);
+  var sessionId = params.get('session_id');
+  if (sessionId) {
+    setPaywallStatus('Verifying payment...', false);
+    try {
+      var result = await verifyCheckout(sessionId);
+      if (result.access) {
+        isUnlocked = true;
+        isAdmin = false;
+        setStored({ access: true, email: result.email || (paywallEmail.value || '').trim(), admin: false });
+        setPaywallStatus('Payment verified. Full mode unlocked.', false);
+        window.history.replaceState({}, '', window.location.pathname);
+      } else {
+        setPaywallStatus('Payment not confirmed yet.', true);
+      }
+    } catch (_) {
+      setPaywallStatus('Could not verify payment right now.', true);
+    }
+  } else {
+    var stored = getStored();
+    if (stored && stored.access) {
+      isUnlocked = true;
+      isAdmin = !!stored.admin;
+      if (stored.email && stored.email !== 'admin') paywallEmail.value = stored.email;
+      setPaywallStatus('Access restored on this device.', false);
+    }
+  }
+}
+
+(async function boot() {
+  await initAccessState();
+  updateModeUI();
+  renderSlots(currentLength);
+  syncValidity();
+  renderQuickExample();
+})();
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How is Overlap match percentage calculated?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The percentage measures how closely the combined shape matches the suggested visible letter. A higher percentage indicates a stronger visual match."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is full mode a subscription?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Full mode uses a one-time payment."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is this tool affiliated with MrBeast?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. This is an independent puzzle-solving utility."
+      }
+    }
+  ]
+}
+</script>
+</body>
+</html>

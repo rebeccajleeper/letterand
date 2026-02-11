@@ -13,10 +13,35 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Enforce one-time purchase per email.
+    const recentSessions = await stripe.checkout.sessions.list({ limit: 100 })
+    const alreadyPaidSession = recentSessions.data.some((s) => (
+      s.status === 'complete' &&
+      s.payment_status === 'paid' &&
+      (
+        s.customer_email === email ||
+        s.customer_details?.email === email
+      )
+    ))
+
+    if (alreadyPaidSession) {
+      return res.status(409).json({
+        alreadyPurchased: true,
+        error: 'Access already exists for this email. Use sign in/recovery.',
+      })
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       customer_email: email,
-      line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: { name: 'Word Overlay Decoder Full Mode (One-Time)' },
+          unit_amount: 499,
+        },
+        quantity: 1,
+      }],
       success_url: `${req.headers.origin}?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}`,
     })
