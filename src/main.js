@@ -1,9 +1,12 @@
 // Entry point — wires up combiner, finder, auth, and word mode
 
 import './style.css'
+import { inject } from '@vercel/analytics'
 import { initElements, updateCombiner, setupFinder, updateFinder } from './ui.js'
 import { isUnlocked, getEmail, unlock, checkEmail, startCheckout, logout, adminLogin } from './auth.js'
 import { initWordMode, updateWordMode } from './word-mode.js'
+
+inject()
 
 document.addEventListener('DOMContentLoaded', async () => {
   initElements()
