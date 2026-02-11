@@ -2,8 +2,8 @@
 
 import './style.css'
 import { initElements, updateCombiner, setupFinder, updateFinder } from './ui.js'
-import { isUnlocked, getEmail, unlock, checkEmail, startCheckout, logout } from './auth.js'
-import { initWordMode, updateWordMode, setDecodeEnabled } from './word-mode.js'
+import { isUnlocked, getEmail, unlock, checkEmail, startCheckout, logout, adminLogin } from './auth.js'
+import { initWordMode, updateWordMode } from './word-mode.js'
 
 document.addEventListener('DOMContentLoaded', async () => {
   initElements()
@@ -40,7 +40,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     lockIcon.innerHTML = '&#x1F513;'
     wordA.disabled = false
     wordB.disabled = false
-    setDecodeEnabled(true)
     const email = getEmail()
     if (email) wordEmailEl.textContent = email
   }
@@ -51,7 +50,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     lockIcon.innerHTML = '&#x1F512;'
     wordA.disabled = true
     wordB.disabled = true
-    setDecodeEnabled(false)
+    // Reset admin form
+    const af = document.getElementById('adminForm')
+    if (af) af.style.display = 'none'
   }
 
   function setStatus(msg, isError) {
@@ -82,37 +83,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     setLockedUI()
   }
 
-  // Sign in button (primary — handles both admin and email lookup)
-  const paywallPassword = document.getElementById('paywallPassword')
-  paywallSigninBtn.addEventListener('click', async () => {
-    const email = paywallEmail.value.trim()
-    const password = paywallPassword.value
-    if (!email) {
-      setStatus('Please enter your email or username.', true)
-      return
-    }
-    paywallSigninBtn.disabled = true
-    paywallSigninBtn.textContent = 'Signing in...'
-    setStatus('', false)
-    try {
-      const result = await checkEmail(email, password)
-      if (result.access) {
-        setUnlockedUI()
-      } else {
-        setStatus('Invalid credentials. Check your email/username and password, or purchase access below.', true)
-      }
-    } catch {
-      setStatus('Error signing in. Please try again.', true)
-    }
-    paywallSigninBtn.disabled = false
-    paywallSigninBtn.textContent = 'Sign In'
-  })
-
-  // Buy button (secondary — Stripe checkout)
+  // Buy button
   paywallBuyBtn.addEventListener('click', async () => {
     const email = paywallEmail.value.trim()
     if (!email || !email.includes('@')) {
-      setStatus('Please enter a valid email address to purchase.', true)
+      setStatus('Please enter a valid email address.', true)
       return
     }
     paywallBuyBtn.disabled = true
@@ -123,8 +98,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch {
       setStatus('Error starting checkout. Please try again.', true)
       paywallBuyBtn.disabled = false
-      paywallBuyBtn.textContent = 'Purchase access — $4.99 one-time'
+      paywallBuyBtn.textContent = 'Unlock Word Mode'
     }
+  })
+
+  // Sign in with email (already purchased)
+  paywallSigninBtn.addEventListener('click', async () => {
+    const email = paywallEmail.value.trim()
+    if (!email || !email.includes('@')) {
+      setStatus('Please enter your email address above first.', true)
+      return
+    }
+    paywallSigninBtn.disabled = true
+    paywallSigninBtn.textContent = 'Checking...'
+    setStatus('', false)
+    try {
+      const result = await checkEmail(email)
+      if (result.access) {
+        setUnlockedUI()
+      } else {
+        setStatus('No purchase found for this email. Try a different email or purchase below.', true)
+      }
+    } catch {
+      setStatus('Error checking access. Please try again.', true)
+    }
+    paywallSigninBtn.disabled = false
+    paywallSigninBtn.textContent = 'Already purchased? Sign in with your email'
   })
 
   // Logout
@@ -133,5 +132,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     setLockedUI()
     paywallEmail.value = ''
     setStatus('', false)
+  })
+
+  // Admin toggle + login
+  const adminToggle = document.getElementById('adminToggle')
+  const adminForm = document.getElementById('adminForm')
+  const adminSubmit = document.getElementById('adminSubmit')
+
+  adminToggle.addEventListener('click', () => {
+    const hidden = adminForm.style.display === 'none'
+    adminForm.style.display = hidden ? 'flex' : 'none'
+  })
+
+  adminSubmit.addEventListener('click', async () => {
+    const username = document.getElementById('adminUser').value.trim()
+    const password = document.getElementById('adminPass').value
+    if (!username || !password) {
+      setStatus('Enter admin credentials.', true)
+      return
+    }
+    adminSubmit.disabled = true
+    adminSubmit.textContent = 'Checking...'
+    try {
+      const result = await adminLogin(username, password)
+      if (result.access) {
+        setUnlockedUI()
+      } else {
+        setStatus('Invalid admin credentials.', true)
+      }
+    } catch {
+      setStatus('Admin login error.', true)
+    }
+    adminSubmit.disabled = false
+    adminSubmit.textContent = 'Sign in'
   })
 })

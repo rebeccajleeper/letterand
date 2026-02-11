@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PuzzleDecode — Decode Letter Overlap Puzzles</title>
+  <title>LetterAND — Combine Letter Shapes</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F50D;</text></svg>">
 </head>
 <body>
@@ -11,8 +11,8 @@
 
     <!-- Header -->
     <header class="app-header">
-      <h1>PuzzleDecode</h1>
-      <p class="subtitle">Decode the letter overlap puzzle</p>
+      <h1>LetterAND</h1>
+      <p class="subtitle">See what two overlapping letters look like</p>
     </header>
 
     <!-- How it works -->
@@ -64,44 +64,50 @@
     </section>
 
     <!-- ═══════════════════════════════════════════════ -->
-    <!-- SECTION 2: Letter Finder                       -->
+    <!-- SECTION 2: Letter Solver                       -->
     <!-- ═══════════════════════════════════════════════ -->
     <section class="finder-section">
-      <h2>Find the missing letter</h2>
-      <p class="section-desc">Enter a known letter to see all 26 AND combinations. Upload an image to sort by best match.</p>
+      <h2>Solve a letter</h2>
+      <p class="section-desc">Know one letter and have an image of the result? Enter the letter, upload the image, and we'll find the other letter.</p>
 
-      <div class="finder-controls">
-        <div class="finder-row">
-          <div class="letter-input-group">
-            <label for="knownLetter">Known letter</label>
+      <div class="solver-steps">
+        <div class="solver-step">
+          <span class="solver-step-num">1</span>
+          <div class="solver-step-content">
+            <label for="knownLetter" class="solver-step-label">Enter the known letter</label>
             <input type="text" id="knownLetter" maxlength="1" value="" class="letter-input input-known" spellcheck="false" autocomplete="off" placeholder="?">
           </div>
-          <div class="finder-plus">&amp;</div>
-          <div class="drop-zone-inline" id="dropZone">
-            <div class="drop-zone-content" id="dropZoneContent">
-              <div class="drop-icon">+</div>
-              <p>Upload target image</p>
-              <input type="file" id="targetUpload" accept="image/*" class="sr-only">
+        </div>
+
+        <div class="solver-step">
+          <span class="solver-step-num">2</span>
+          <div class="solver-step-content">
+            <label class="solver-step-label">Upload the combined image</label>
+            <div class="drop-zone" id="dropZone">
+              <div class="drop-zone-content">
+                <div class="drop-icon">+</div>
+                <p>Drag & drop an image here</p>
+                <p class="drop-or">or</p>
+                <div class="browse-wrapper">
+                  <span class="browse-btn">Browse files</span>
+                  <input type="file" id="targetUpload" accept="image/*" class="browse-file-input">
+                </div>
+              </div>
             </div>
-            <div class="target-preview" id="targetPreview"></div>
+            <div class="target-preview" id="targetPreview">
+              <!-- Shows uploaded target thumbnail -->
+            </div>
           </div>
         </div>
-        <button class="solve-btn" id="solveBtn" disabled>Solve</button>
       </div>
 
-      <!-- Direct match: image vs letter library (no known letter needed) -->
-      <div class="direct-match" id="directMatch">
-        <!-- Filled by JS: what the image looks like compared to all 26 letters -->
+      <!-- Solver answer — shown after both letter + image provided -->
+      <div class="solver-result" id="solverResult" style="display: none;">
+        <!-- Filled by JS: the top match prominently displayed -->
       </div>
 
-      <!-- Best match result (shown when image + known letter provided) -->
-      <div class="finder-result" id="finderResult">
-        <!-- Filled by JS: prominent best match display -->
-      </div>
-
-      <!-- All candidates grid -->
       <div class="finder-grid" id="finderGrid">
-        <!-- Filled by JS: ranked candidate cards -->
+        <!-- Filled by JS: 26 cards, one per letter -->
       </div>
     </section>
 
@@ -113,7 +119,7 @@
         <h2>Word Mode</h2>
         <span class="lock-icon" id="lockIcon">&#x1F512;</span>
       </div>
-      <p class="section-desc">Combine words or decode a combined word image to find the missing letters.</p>
+      <p class="section-desc">Enter two words of equal length and see what each letter position looks like combined.</p>
 
       <!-- Paywall overlay (shown when locked) -->
       <div class="paywall-overlay" id="paywallOverlay">
@@ -121,19 +127,27 @@
           <div class="paywall-icon">&#x1F512;</div>
           <h3>Unlock Word Mode</h3>
           <p>Combine entire words at once — see every letter position decoded side by side.</p>
+          <div class="paywall-price">$4.99 <span>one-time</span></div>
 
           <div class="paywall-email-group" id="paywallEmailGroup">
-            <input type="text" id="paywallEmail" placeholder="Email or username" class="paywall-email-input">
-            <input type="password" id="paywallPassword" placeholder="Password" class="paywall-email-input" style="margin-top: 8px;">
-            <button class="paywall-buy-btn" id="paywallSigninBtn">Sign In</button>
+            <input type="email" id="paywallEmail" placeholder="your@email.com" class="paywall-email-input" autocomplete="email">
+            <button class="paywall-buy-btn" id="paywallBuyBtn">Unlock Word Mode</button>
           </div>
 
           <div class="paywall-alt">
-            <p class="paywall-alt-text">Don't have an account?</p>
-            <button class="paywall-signin-btn" id="paywallBuyBtn">Purchase access — $4.99 one-time</button>
+            <button class="paywall-signin-btn" id="paywallSigninBtn">Already purchased? Sign in with your email</button>
           </div>
 
           <div class="paywall-status" id="paywallStatus"></div>
+
+          <div class="admin-section">
+            <button class="admin-toggle" id="adminToggle">Admin</button>
+            <div class="admin-form" id="adminForm" style="display: none;">
+              <input type="text" id="adminUser" placeholder="Username" class="admin-input" autocomplete="username">
+              <input type="password" id="adminPass" placeholder="Password" class="admin-input" autocomplete="current-password">
+              <button class="admin-submit-btn" id="adminSubmit">Sign in</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -143,53 +157,27 @@
         <button class="word-logout-btn" id="wordLogoutBtn">Sign out</button>
       </div>
 
-      <!-- Tabs -->
-      <div class="word-tabs" id="wordTabs">
-        <button class="word-tab active" data-tab="combine" id="tabCombine">Combine</button>
-        <button class="word-tab" data-tab="decode" id="tabDecode">Decode Image</button>
+      <!-- Word inputs (disabled when locked) -->
+      <div class="word-inputs" id="wordInputs">
+        <div class="word-input-group">
+          <label for="wordA">Word A</label>
+          <input type="text" id="wordA" placeholder="HELLO" class="word-input input-a" spellcheck="false" autocomplete="off" disabled>
+        </div>
+        <span class="combiner-op">&amp;</span>
+        <div class="word-input-group">
+          <label for="wordB">Word B</label>
+          <input type="text" id="wordB" placeholder="WORLD" class="word-input input-b" spellcheck="false" autocomplete="off" disabled>
+        </div>
       </div>
 
-      <!-- ── Combine panel (existing) ── -->
-      <div class="word-panel" id="combinePanel">
-        <div class="word-inputs" id="wordInputs">
-          <div class="word-input-group">
-            <label for="wordA">Word A</label>
-            <input type="text" id="wordA" placeholder="HELLO" class="word-input input-a" spellcheck="false" autocomplete="off" disabled>
-          </div>
-          <span class="combiner-op">&amp;</span>
-          <div class="word-input-group">
-            <label for="wordB">Word B</label>
-            <input type="text" id="wordB" placeholder="WORLD" class="word-input input-b" spellcheck="false" autocomplete="off" disabled>
-          </div>
-        </div>
-        <div class="word-error" id="wordError"></div>
-        <div class="word-result" id="wordResult"></div>
-        <div class="word-decoded" id="wordDecoded"></div>
+      <div class="word-error" id="wordError"></div>
+
+      <div class="word-result" id="wordResult">
+        <!-- Filled by JS: one card per letter position -->
       </div>
 
-      <!-- ── Decode panel (new) ── -->
-      <div class="word-panel" id="decodePanel" style="display: none;">
-        <p class="panel-desc">Upload an image of the combined word and enter the word you know. We'll decode the missing word letter by letter.</p>
-        <div class="decode-controls">
-          <div class="decode-row">
-            <div class="word-input-group">
-              <label for="decodeWord">Known word</label>
-              <input type="text" id="decodeWord" placeholder="HELLO" class="word-input input-a" spellcheck="false" autocomplete="off" disabled>
-            </div>
-            <span class="combiner-op">&amp;</span>
-            <div class="decode-drop-zone" id="decodeDropZone">
-              <div class="decode-drop-content" id="decodeDropContent">
-                <div class="drop-icon">+</div>
-                <p>Upload combined word image</p>
-                <input type="file" id="decodeUpload" accept="image/*" class="sr-only">
-              </div>
-              <div class="decode-preview" id="decodePreview"></div>
-            </div>
-          </div>
-          <button class="solve-btn" id="decodeSolveBtn" disabled>Decode Word</button>
-        </div>
-        <div class="decode-result" id="decodeResult"></div>
-        <div class="decode-decoded-result" id="decodeDecodedResult"></div>
+      <div class="word-decoded" id="wordDecoded">
+        <!-- Filled by JS: the decoded result word -->
       </div>
     </section>
 

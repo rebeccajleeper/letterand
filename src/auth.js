@@ -53,6 +53,20 @@ export async function checkEmail(email, password) {
   return data
 }
 
+/** Admin bypass login */
+export async function adminLogin(username, password) {
+  const res = await fetch('/api/admin-login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  })
+  const data = await res.json()
+  if (data.access) {
+    setStored({ access: true, email: data.email })
+  }
+  return data
+}
+
 /** Start the Stripe Checkout flow */
 export async function startCheckout(email) {
   const res = await fetch('/api/create-checkout', {

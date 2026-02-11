@@ -1,24 +1,19 @@
 // UI logic for combiner + finder modes
 
 import {
-  CELL, ALPHABET, buildLetterMasks, buildAllFontMasks, andMasks,
-  drawMask, findBestMatches, matchScore,
+  CELL, ALPHABET, buildLetterMasks, andMasks,
+  drawMask, findBestMatches, matchScore, toBinary,
 } from './engine.js'
 
-const FONT_SIZE = 160
+// Default font size (maps to 300px on the 200x200 canvas)
+const FONT_SIZE = 120
 
-// Cached letter masks — single font for display, all fonts for solving
+// Cached letter masks (rebuilt only when needed)
 let masks = null
-let allFontMasks = null
 
 function getMasks() {
   if (!masks) masks = buildLetterMasks(FONT_SIZE)
   return masks
-}
-
-function getAllFontMasks() {
-  if (!allFontMasks) allFontMasks = buildAllFontMasks(FONT_SIZE)
-  return allFontMasks
 }
 
 // ── DOM refs ───────────────────────────────────────────
@@ -32,16 +27,13 @@ export function initElements() {
     letterB: document.getElementById('letterB'),
     combinerResult: document.getElementById('combinerResult'),
     combinerSummary: document.getElementById('combinerSummary'),
-    // Finder
+    // Finder / Solver
     knownLetter: document.getElementById('knownLetter'),
     targetUpload: document.getElementById('targetUpload'),
     targetPreview: document.getElementById('targetPreview'),
     dropZone: document.getElementById('dropZone'),
-    dropZoneContent: document.getElementById('dropZoneContent'),
-    solveBtn: document.getElementById('solveBtn'),
-    finderResult: document.getElementById('finderResult'),
+    solverResult: document.getElementById('solverResult'),
     finderGrid: document.getElementById('finderGrid'),
-    directMatch: document.getElementById('directMatch'),
   }
 }
 
@@ -132,6 +124,25 @@ export function updateCombiner() {
   groupAND.appendChild(makeCanvas(maskAND, 34, 34, 34, 120))
   row.appendChild(groupAND)
 
+  // Arrow =>
+  const opArrow = document.createElement('span')
+  opArrow.className = 'vis-op vis-arrow'
+  opArrow.textContent = '\u2192'
+  row.appendChild(opArrow)
+
+  // Best match letter
+  const groupMatch = document.createElement('div')
+  groupMatch.className = 'vis-group vis-match'
+  const matchLetter = document.createElement('div')
+  matchLetter.className = 'match-letter'
+  matchLetter.textContent = best[0].ch
+  groupMatch.appendChild(matchLetter)
+  const matchScore = document.createElement('div')
+  matchScore.className = 'match-score'
+  matchScore.textContent = `${(best[0].score * 100).toFixed(0)}% match`
+  groupMatch.appendChild(matchScore)
+  row.appendChild(groupMatch)
+
   // Summary text
   const summary = els.combinerSummary
   const p1 = document.createElement('p')
@@ -147,7 +158,7 @@ export function updateCombiner() {
   }
 }
 
-// ── Finder ─────────────────────────────────────────────
+// ── Finder / Solver ───────────────────────────────────────
 
 let targetImage = null
 let targetMask = null
@@ -159,9 +170,11 @@ export function setupFinder() {
     if (file) loadTargetFile(file)
   })
 
-  // Click anywhere on drop zone triggers file input
+  // Click on drop zone (outside the file input) opens file picker
   els.dropZone.addEventListener('click', (e) => {
-    if (e.target.tagName !== 'INPUT') els.targetUpload.click()
+    if (!e.target.closest('.browse-wrapper')) {
+      els.targetUpload.click()
+    }
   })
 
   // Drag and drop
@@ -180,18 +193,8 @@ export function setupFinder() {
     if (file && file.type.startsWith('image/')) loadTargetFile(file)
   })
 
-  // Show the 26-card grid when known letter changes (no target matching)
-  // Clear direct match and grid when letter is cleared
-  els.knownLetter.addEventListener('input', () => {
-    if (!parseLetter(els.knownLetter)) clearEl(els.directMatch)
-    updateFinder(false)
-  })
-
-  // Solve button runs target matching + direct match
-  els.solveBtn.addEventListener('click', () => {
-    if (targetMask) updateDirectMatch()
-    updateFinder(true)
-  })
+  // Known letter input
+  els.knownLetter.addEventListener('input', updateFinder)
 }
 
 function loadTargetFile(file) {
@@ -203,7 +206,7 @@ function loadTargetFile(file) {
       targetMask = imageToMask(img)
       showTargetPreview(img)
       els.dropZone.classList.add('has-file')
-      els.solveBtn.disabled = false
+      updateFinder()
     }
     img.src = ev.target.result
   }
@@ -218,179 +221,148 @@ function imageToMask(img) {
   ctx.fillStyle = '#fff'
   ctx.fillRect(0, 0, CELL, CELL)
   ctx.drawImage(img, 0, 0, CELL, CELL)
-  const d = ctx.getImageData(0, 0, CELL, CELL).data
-  const mask = new Uint8Array(CELL * CELL)
-  for (let i = 0; i < mask.length; i++) {
-    // Color-agnostic: any pixel with a dark channel is "ink"
-    const minCh = Math.min(d[i * 4], d[i * 4 + 1], d[i * 4 + 2])
-    mask[i] = minCh < 200 ? 1 : 0
-  }
-  return mask
+  return toBinary(ctx.getImageData(0, 0, CELL, CELL))
 }
 
 function showTargetPreview(img) {
   clearEl(els.targetPreview)
-  const sz = 80
+  const h = 80
+  const w = Math.round(img.width * (h / img.height))
   const cv = document.createElement('canvas')
-  cv.width = sz
-  cv.height = sz
-  cv.style.width = sz + 'px'
-  cv.style.height = sz + 'px'
+  cv.width = w
+  cv.height = h
+  cv.style.width = w + 'px'
+  cv.style.height = h + 'px'
   cv.className = 'target-canvas'
   const ctx = cv.getContext('2d')
-  ctx.drawImage(img, 0, 0, sz, sz)
+  ctx.drawImage(img, 0, 0, w, h)
+
+  const label = document.createElement('span')
+  label.className = 'target-label'
+  label.textContent = 'Target:'
+  els.targetPreview.appendChild(label)
   els.targetPreview.appendChild(cv)
-
-  // Clear button
-  const clearBtn = document.createElement('button')
-  clearBtn.className = 'target-clear-btn'
-  clearBtn.textContent = '\u00d7'
-  clearBtn.title = 'Remove image'
-  clearBtn.addEventListener('click', (e) => {
-    e.stopPropagation()
-    targetImage = null
-    targetMask = null
-    clearEl(els.targetPreview)
-    clearEl(els.directMatch)
-    els.dropZoneContent.style.display = ''
-    els.targetPreview.style.display = 'none'
-    els.dropZone.classList.remove('has-file')
-    els.targetUpload.value = ''
-    els.solveBtn.disabled = true
-  })
-  els.targetPreview.appendChild(clearBtn)
-
-  // Hide the upload prompt, show preview
-  els.dropZoneContent.style.display = 'none'
-  els.targetPreview.style.display = 'flex'
 }
 
-function updateDirectMatch() {
-  clearEl(els.directMatch)
-  if (!targetMask) return
-
-  // Try all fonts and keep best score per letter
-  const bestByLetter = {}
-  for (const { masks: m } of getAllFontMasks()) {
-    for (const ch of ALPHABET) {
-      const score = matchScore(m[ch], targetMask)
-      if (!bestByLetter[ch] || score > bestByLetter[ch]) {
-        bestByLetter[ch] = score
-      }
-    }
-  }
-  const results = Object.entries(bestByLetter).map(([ch, score]) => ({ ch, score }))
-  results.sort((a, b) => b.score - a.score)
-
-  const container = document.createElement('div')
-  container.className = 'direct-match-box'
-
-  const label = document.createElement('div')
-  label.className = 'direct-match-label'
-  label.textContent = 'Image looks like'
-
-  const topMatches = document.createElement('div')
-  topMatches.className = 'direct-match-results'
-
-  for (let i = 0; i < Math.min(results.length, 5); i++) {
-    const r = results[i]
-    const item = document.createElement('div')
-    item.className = 'direct-match-item' + (i === 0 ? ' best' : '')
-
-    const letter = document.createElement('span')
-    letter.className = 'direct-match-letter'
-    letter.textContent = r.ch
-
-    const score = document.createElement('span')
-    score.className = 'direct-match-score'
-    score.textContent = `${(r.score * 100).toFixed(0)}%`
-
-    item.appendChild(letter)
-    item.appendChild(score)
-    topMatches.appendChild(item)
-  }
-
-  container.appendChild(label)
-  container.appendChild(topMatches)
-  els.directMatch.appendChild(container)
-}
-
-export function updateFinder(solve = false) {
-  clearEl(els.finderResult)
+export function updateFinder() {
   clearEl(els.finderGrid)
+  clearEl(els.solverResult)
+  els.solverResult.style.display = 'none'
 
   const known = parseLetter(els.knownLetter)
   if (!known) {
     const msg = document.createElement('p')
     msg.className = 'finder-empty'
-    msg.textContent = 'Enter a known letter above to see all 26 AND combinations.'
+    msg.textContent = 'Start by entering a letter above.'
     els.finderGrid.appendChild(msg)
     return
   }
 
-  // Only use target matching when Solve was clicked
-  const useTarget = solve && targetMask
+  if (!targetMask) {
+    const msg = document.createElement('p')
+    msg.className = 'finder-empty'
+    msg.textContent = 'Now upload the combined image to find the other letter.'
+    els.finderGrid.appendChild(msg)
+    return
+  }
 
+  // We have both a known letter and a target image — solve it
   const m = getMasks()
   const results = []
 
   for (const ch of ALPHABET) {
-    // Always use default font for display
     const maskAND = andMasks(m[known], m[ch])
-    const looksLike = findBestMatches(maskAND, m, 1)[0]
-
-    // Score across all fonts when solving (picks best font per candidate)
-    let targetScore = null
-    if (useTarget) {
-      for (const { masks: fm } of getAllFontMasks()) {
-        const andResult = andMasks(fm[known], fm[ch])
-        const score = matchScore(andResult, targetMask)
-        if (targetScore === null || score > targetScore) {
-          targetScore = score
-        }
-      }
-    }
-
-    results.push({ ch, maskAND, looksLike, targetScore })
+    const ts = matchScore(maskAND, targetMask)
+    results.push({ ch, maskAND, targetScore: ts })
   }
 
-  // Sort by target score only when solving
-  if (useTarget) {
-    results.sort((a, b) => b.targetScore - a.targetScore)
+  results.sort((a, b) => b.targetScore - a.targetScore)
+
+  // ── Prominent solver answer ──────────────────────
+  const best = results[0]
+  els.solverResult.style.display = 'block'
+
+  const answerRow = document.createElement('div')
+  answerRow.className = 'solver-answer'
+
+  // Show: [known] & [?] = [AND image] → answer letter
+  const groupKnown = document.createElement('div')
+  groupKnown.className = 'vis-group'
+  const labelKnown = document.createElement('div')
+  labelKnown.className = 'vis-label label-a'
+  labelKnown.textContent = known
+  groupKnown.appendChild(labelKnown)
+  groupKnown.appendChild(makeCanvas(m[known], 233, 69, 96, 100))
+  answerRow.appendChild(groupKnown)
+
+  const opAnd = document.createElement('span')
+  opAnd.className = 'vis-op'
+  opAnd.textContent = '&'
+  answerRow.appendChild(opAnd)
+
+  const groupAnswer = document.createElement('div')
+  groupAnswer.className = 'vis-group'
+  const labelAnswer = document.createElement('div')
+  labelAnswer.className = 'vis-label label-b'
+  labelAnswer.textContent = best.ch
+  groupAnswer.appendChild(labelAnswer)
+  groupAnswer.appendChild(makeCanvas(m[best.ch], 67, 97, 238, 100))
+  answerRow.appendChild(groupAnswer)
+
+  const opEq = document.createElement('span')
+  opEq.className = 'vis-op'
+  opEq.textContent = '='
+  answerRow.appendChild(opEq)
+
+  const groupAND = document.createElement('div')
+  groupAND.className = 'vis-group'
+  const labelAND = document.createElement('div')
+  labelAND.className = 'vis-label label-and'
+  labelAND.textContent = 'result'
+  groupAND.appendChild(labelAND)
+  groupAND.appendChild(makeCanvas(best.maskAND, 34, 34, 34, 100))
+  answerRow.appendChild(groupAND)
+
+  els.solverResult.appendChild(answerRow)
+
+  // Answer text
+  const answerText = document.createElement('div')
+  answerText.className = 'solver-answer-text'
+  answerText.innerHTML = `The other letter is <strong>${best.ch}</strong>`
+  els.solverResult.appendChild(answerText)
+
+  const answerScore = document.createElement('div')
+  answerScore.className = 'solver-answer-score'
+  answerScore.textContent = `${(best.targetScore * 100).toFixed(0)}% match`
+  els.solverResult.appendChild(answerScore)
+
+  // Runner-ups
+  if (results.length > 1) {
+    const runners = results.slice(1, 4)
+    const runnerText = document.createElement('div')
+    runnerText.className = 'solver-runners'
+    runnerText.textContent = 'Also possible: ' + runners.map(r => `${r.ch} (${(r.targetScore * 100).toFixed(0)}%)`).join(', ')
+    els.solverResult.appendChild(runnerText)
   }
 
-  // Build card for each combination
+  // ── Full grid (secondary detail) ─────────────────
   for (const r of results) {
     const card = document.createElement('div')
     card.className = 'finder-card'
-    if (useTarget && r.targetScore > 0.7) {
-      card.classList.add('high-match')
-    }
+    if (r.targetScore > 0.7) card.classList.add('high-match')
 
-    // Header: letter pair
     const header = document.createElement('div')
     header.className = 'card-header'
     header.innerHTML = `<span class="hl-a">${known}</span> & <span class="hl-b">${r.ch}</span>`
     card.appendChild(header)
 
-    // AND result canvas
     card.appendChild(makeCanvas(r.maskAND, 34, 34, 34, 64))
 
-    // What it looks like
-    const looks = document.createElement('div')
-    looks.className = 'card-looks'
-    looks.innerHTML = `looks like <strong>${r.looksLike.ch}</strong>`
-    card.appendChild(looks)
+    const score = document.createElement('div')
+    score.className = 'card-score'
+    score.textContent = `${(r.targetScore * 100).toFixed(0)}% match`
+    card.appendChild(score)
 
-    // Target match score (only when solving)
-    if (useTarget) {
-      const score = document.createElement('div')
-      score.className = 'card-score'
-      score.textContent = `${(r.targetScore * 100).toFixed(0)}% match`
-      card.appendChild(score)
-    }
-
-    // The candidate letter label
     const candidateLabel = document.createElement('div')
     candidateLabel.className = 'card-candidate'
     candidateLabel.textContent = r.ch
@@ -398,7 +370,4 @@ export function updateFinder(solve = false) {
 
     els.finderGrid.appendChild(card)
   }
-
-  // Enable/disable solve button
-  els.solveBtn.disabled = !targetMask
 }
