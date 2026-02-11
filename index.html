@@ -688,7 +688,7 @@ select {
   <section class="card" id="buildSection">
     <div class="section-row">
       <h2 class="section-title"><span class="step-badge">1</span>Enter 2 Words</h2>
-      <span class="mode-pill" id="modePill">Preview Mode: 1 generate, 2 letters per word</span>
+      <span class="mode-pill" id="modePill">Preview Mode: 1 generate, 1 letter per word</span>
     </div>
     <p class="desc">Start in preview mode. You can generate once here, then continue with full mode after unlock.</p>
 
@@ -800,8 +800,8 @@ var STORAGE_KEY = 'letterand_access';
 
 var isUnlocked = false;
 var isAdmin = false;
-var previewGenerations = 0;
-var currentLength = 2;
+var previewGenerations = parseInt(localStorage.getItem('previewGens') || '0', 10);
+var currentLength = 1;
 var cropImage = null;
 var clueDisplayHeight = 72;
 var lastVisibleWord = '';
@@ -998,15 +998,15 @@ function updateModeUI() {
     paywallEmail.style.display = 'none';
     unlockBox.style.borderStyle = 'solid';
   } else {
-    modePill.textContent = 'Preview Mode: 1 generate, 2 letters per word';
+    modePill.textContent = 'Preview Mode: 1 generate, 1 letter per word';
     modePill.classList.remove('ready');
     lengthLabel.style.display = 'none';
     wordUnlocked.style.display = 'none';
     paywallBuyBtn.style.display = 'inline-block';
     paywallMagicBtn.style.display = 'inline-block';
     paywallEmail.style.display = 'inline-block';
-    currentLength = 2;
-    lengthSelect.value = '2';
+    currentLength = 1;
+    lengthSelect.value = '1';
     unlockBox.style.borderStyle = 'dashed';
   }
 }
@@ -1203,7 +1203,7 @@ function validateSlots() {
   }
 
   if (wordA.length !== currentLength || wordB.length !== currentLength) {
-    return { ok: false, message: 'Enter ' + currentLength + ' letters for each word.' };
+    return { ok: false, message: 'Enter ' + currentLength + ' letter' + (currentLength === 1 ? '' : 's') + ' for each word.' };
   }
 
   return { ok: true, message: 'Ready to generate.' };
@@ -1304,6 +1304,7 @@ function generate() {
 
   if (!isUnlocked) {
     previewGenerations += 1;
+    localStorage.setItem('previewGens', previewGenerations);
     if (previewGenerations >= 1) {
       setError('Preview complete. Unlock full mode for additional generations.');
     }
@@ -1409,6 +1410,7 @@ wordLogoutBtn.addEventListener('click', function() {
   isUnlocked = false;
   isAdmin = false;
   previewGenerations = 0;
+  localStorage.removeItem('previewGens');
   clearStored();
   updateModeUI();
   syncValidity();
