@@ -313,6 +313,13 @@ h2 {
 .slot-a:focus { border-color: var(--accent-red); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 0 0 3px rgba(255, 77, 106, 0.15); }
 .slot-b:focus { border-color: var(--accent-blue); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 0 0 3px rgba(240, 184, 64, 0.15); }
 
+.letter-slot.locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.04);
+  border-style: dashed;
+}
+
 .entry-actions {
   display: flex;
   align-items: center;
@@ -775,7 +782,7 @@ select {
     <h2>Unlock Full Mode</h2>
     <div class="unlock-box" id="unlockBox">
       <div class="unlock-title">One-Time $4.99</div>
-      <div class="unlock-copy">No subscription. Full mode supports up to 15 letters per word and unlimited generation attempts.</div>
+      <div class="unlock-copy">No subscription. Full mode supports up to 14 letters per word and unlimited generation attempts.</div>
       <div class="unlock-copy">Privacy-first option: only an email is used for purchase verification and account recovery.</div>
       <div class="paywall-form">
         <input type="text" id="paywallEmail" class="paywall-email" placeholder="you@example.com" autocomplete="username">
@@ -926,20 +933,27 @@ function getSlots(group) {
 function slotWord(group) {
   var slots = getSlots(group);
   var s = '';
-  for (var i = 0; i < slots.length; i++) s += sanitizeLetter(slots[i].value);
+  for (var i = 0; i < slots.length; i++) {
+    if (slots[i].disabled) continue;
+    s += sanitizeLetter(slots[i].value);
+  }
   return s;
 }
 
-function buildSlot(group, idx) {
+function buildSlot(group, idx, locked) {
   var input = document.createElement('input');
   input.type = 'text';
   input.maxLength = 1;
   input.autocomplete = 'off';
   input.spellcheck = false;
   input.placeholder = '';
-  input.className = 'letter-slot ' + (group === 'a' ? 'slot-a' : 'slot-b');
+  input.className = 'letter-slot ' + (group === 'a' ? 'slot-a' : 'slot-b') + (locked ? ' locked' : '');
   input.setAttribute('data-group', group);
   input.setAttribute('data-index', String(idx));
+  if (locked) {
+    input.disabled = true;
+    input.tabIndex = -1;
+  }
 
   input.addEventListener('input', function() {
     input.value = sanitizeLetter(input.value);
@@ -968,9 +982,10 @@ function renderSlots(length) {
   while (slotsA.firstChild) slotsA.removeChild(slotsA.firstChild);
   while (slotsB.firstChild) slotsB.removeChild(slotsB.firstChild);
 
-  for (var i = 0; i < length; i++) {
-    slotsA.appendChild(buildSlot('a', i));
-    slotsB.appendChild(buildSlot('b', i));
+  for (var i = 0; i < 14; i++) {
+    var locked = i >= length;
+    slotsA.appendChild(buildSlot('a', i, locked));
+    slotsB.appendChild(buildSlot('b', i, locked));
   }
 
   clearResults();
@@ -981,9 +996,8 @@ function renderSlots(length) {
 
 function updateModeUI() {
   if (isUnlocked) {
-    modePill.textContent = 'Full Mode: up to 15 letters, unlimited generation';
+    modePill.textContent = 'Full Mode: 14 letters, unlimited generation';
     modePill.classList.add('ready');
-    lengthLabel.style.display = 'inline-flex';
     wordUnlocked.style.display = 'flex';
     wordEmail.textContent = isAdmin ? 'admin' : ((getStored() && getStored().email) || 'member');
     paywallBuyBtn.style.display = 'none';
@@ -991,19 +1005,19 @@ function updateModeUI() {
     paywallRecoverBtn.style.display = 'none';
     paywallEmail.style.display = 'none';
     unlockBox.style.borderStyle = 'solid';
+    currentLength = 14;
   } else {
     modePill.textContent = 'Preview Mode: 1 generate, 1 letter per word';
     modePill.classList.remove('ready');
-    lengthLabel.style.display = 'none';
     wordUnlocked.style.display = 'none';
     paywallBuyBtn.style.display = 'inline-block';
     paywallSigninBtn.style.display = 'inline-block';
     paywallRecoverBtn.style.display = 'inline-block';
     paywallEmail.style.display = 'inline-block';
     currentLength = 1;
-    lengthSelect.value = '1';
     unlockBox.style.borderStyle = 'dashed';
   }
+  renderSlots(currentLength);
 }
 
 function renderLetter(ch, fontSize) {
@@ -1372,6 +1386,8 @@ paywallSigninBtn.addEventListener('click', async function() {
   }
   if (isAdminIdentity(emailOrAdmin)) {
     isUnlocked = true;
+    localStorage.removeItem('previewGens_v2');
+    previewGenerations = 0;
     isAdmin = true;
     setStored({ access: true, email: 'admin', admin: true });
     updateModeUI();
@@ -1385,6 +1401,8 @@ paywallSigninBtn.addEventListener('click', async function() {
     var data = await checkAccess(emailOrAdmin);
     if (data.access) {
       isUnlocked = true;
+      localStorage.removeItem('previewGens_v2');
+      previewGenerations = 0;
       isAdmin = false;
       setStored({ access: true, email: emailOrAdmin, admin: false });
       updateModeUI();
@@ -1408,6 +1426,8 @@ paywallRecoverBtn.addEventListener('click', async function() {
   }
   if (isAdminIdentity(emailOrAdmin)) {
     isUnlocked = true;
+    localStorage.removeItem('previewGens_v2');
+    previewGenerations = 0;
     isAdmin = true;
     setStored({ access: true, email: 'admin', admin: true });
     updateModeUI();
@@ -1421,6 +1441,8 @@ paywallRecoverBtn.addEventListener('click', async function() {
     var data = await checkAccess(emailOrAdmin);
     if (data.access) {
       isUnlocked = true;
+      localStorage.removeItem('previewGens_v2');
+      previewGenerations = 0;
       isAdmin = false;
       setStored({ access: true, email: emailOrAdmin, admin: false });
       updateModeUI();
@@ -1445,12 +1467,6 @@ wordLogoutBtn.addEventListener('click', function() {
   updateModeUI();
   syncValidity();
   setPaywallStatus('Signed out.', false);
-});
-
-lengthSelect.addEventListener('change', function() {
-  currentLength = parseInt(lengthSelect.value, 10);
-  renderSlots(currentLength);
-  setError('');
 });
 
 cropFileInput.addEventListener('change', function(e) {
@@ -1551,8 +1567,12 @@ async function initAccessState() {
       var result = await verifyCheckout(sessionId);
       if (result.access) {
         isUnlocked = true;
+        localStorage.removeItem('previewGens_v2');
+        previewGenerations = 0;
         isAdmin = false;
         setStored({ access: true, email: result.email || (paywallEmail.value || '').trim(), admin: false });
+        updateModeUI();
+        syncValidity();
         setPaywallStatus('Payment verified. Full mode unlocked.', false);
         window.history.replaceState({}, '', window.location.pathname);
       } else {
@@ -1565,8 +1585,12 @@ async function initAccessState() {
     var stored = getStored();
     if (stored && stored.access) {
       isUnlocked = true;
+      localStorage.removeItem('previewGens_v2');
+      previewGenerations = 0;
       isAdmin = !!stored.admin;
       if (stored.email && stored.email !== 'admin') paywallEmail.value = stored.email;
+      updateModeUI();
+      syncValidity();
       setPaywallStatus('Access restored on this device.', false);
     }
   }
@@ -1575,7 +1599,6 @@ async function initAccessState() {
 (async function boot() {
   await initAccessState();
   updateModeUI();
-  renderSlots(currentLength);
   syncValidity();
   renderQuickExample();
 })();

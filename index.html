@@ -764,7 +764,7 @@ select {
     <h2>Unlock Full Mode</h2>
     <div class="unlock-box" id="unlockBox">
       <div class="unlock-title">Unlock for $4.99</div>
-      <div class="unlock-copy">No subscription. Full mode supports up to 15 letters per word and unlimited generation attempts.</div>
+      <div class="unlock-copy">No subscription. Full mode supports up to 14 letters per word and unlimited generation attempts.</div>
       <div class="unlock-copy">Unlock is immediate after payment. Use Email Sign-In Link only when returning on a new device/browser.</div>
       <div class="paywall-form">
         <input type="text" id="paywallEmail" class="paywall-email" placeholder="you@example.com" autocomplete="username">
@@ -969,7 +969,7 @@ function renderSlots(length) {
   while (slotsA.firstChild) slotsA.removeChild(slotsA.firstChild);
   while (slotsB.firstChild) slotsB.removeChild(slotsB.firstChild);
 
-  for (var i = 0; i < 15; i++) {
+  for (var i = 0; i < 14; i++) {
     var locked = i >= length;
     slotsA.appendChild(buildSlot('a', i, locked));
     slotsB.appendChild(buildSlot('b', i, locked));
@@ -983,7 +983,7 @@ function renderSlots(length) {
 
 function updateModeUI() {
   if (isUnlocked) {
-    modePill.textContent = 'Full Mode: 15 letters, unlimited generation';
+    modePill.textContent = 'Full Mode: 14 letters, unlimited generation';
     modePill.classList.add('ready');
     wordUnlocked.style.display = 'flex';
     wordEmail.textContent = isAdmin ? 'admin' : ((getStored() && getStored().email) || 'member');
@@ -991,7 +991,7 @@ function updateModeUI() {
     paywallMagicBtn.style.display = 'none';
     paywallEmail.style.display = 'none';
     unlockBox.style.borderStyle = 'solid';
-    currentLength = 15;
+    currentLength = 14;
   } else {
     modePill.textContent = 'Preview Mode: 1 generate, 1 letter per word';
     modePill.classList.remove('ready');
